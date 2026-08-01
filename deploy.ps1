@@ -1,5 +1,5 @@
-# deploy.ps1 — Despliegue de RRHH.NET en el servidor de produccion (IIS + Laravel public).
-# Uso:  cd C:\inetpub\rrhh-net ;  .\deploy.ps1
+# deploy.ps1 — Despliegue de GERENCIAL.NET en el servidor de produccion (IIS + Laravel public).
+# Uso:  cd C:\inetpub\gerencial-net ;  .\deploy.ps1
 #
 # Sincroniza el repo con GitHub y copia el frontend compilado (frontend\dist) a
 # backend\public. Copia el CONTENIDO de assets (\*) para evitar el anidado
