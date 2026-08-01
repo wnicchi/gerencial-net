@@ -28,21 +28,26 @@ export const menuConfig: MenuItem[] = [
   },
 
   // ══════════════════ SISTEMA ══════════════════
+  // Cambio de Clave lo ve CUALQUIER usuario (cambiar su propia contraseña).
+  // Seguridad (administración de usuarios/roles) y los logs son SOLO admin: cada
+  // hoja lleva adminOnly, porque el filtro de visibilidad solo lo aplica en las
+  // hojas (un grupo se muestra si alguna hoja es visible).
   {
-    id: 'sistema', label: 'Sistema', icono: '🔧', adminOnly: true,
+    id: 'sistema', label: 'Sistema', icono: '🔧',
     hijos: [
+      { id: 'cambio-clave', label: 'Cambio de Clave', icono: '🔑', ruta: '/dashboard/cambio-clave' },
+      { id: 's-sis-1', separador: true, label: '', icono: '' },
       {
         id: 'seguridad', label: 'Seguridad', icono: '🔒',
         hijos: [
-          { id: 'cambio-clave',    label: 'Cambio de Clave',            icono: '🔑', ruta: '/dashboard/cambio-clave' },
-          { id: 'alta-accesos',    label: 'Administración de Usuarios', icono: '👤', ruta: '/dashboard/admin-permisos' },
-          { id: 'roles',           label: 'Roles / Plantillas',         icono: '🛡️', ruta: '/dashboard/roles' },
-          { id: 'clonar-permisos', label: 'Clonar Permisos',            icono: '👥', ruta: '/dashboard/clonar-permisos' },
-          { id: 'usuarios-activos',label: 'Usuarios en el Sistema',     icono: '👥', ruta: '/dashboard/usuarios-activos' },
+          { id: 'alta-accesos',    label: 'Administración de Usuarios', icono: '👤', ruta: '/dashboard/admin-permisos',  adminOnly: true },
+          { id: 'roles',           label: 'Roles / Plantillas',         icono: '🛡️', ruta: '/dashboard/roles',           adminOnly: true },
+          { id: 'clonar-permisos', label: 'Clonar Permisos',            icono: '👥', ruta: '/dashboard/clonar-permisos', adminOnly: true },
+          { id: 'usuarios-activos',label: 'Usuarios en el Sistema',     icono: '👥', ruta: '/dashboard/usuarios-activos', adminOnly: true },
         ]
       },
-      { id: 'log-errores',   label: 'Log de Errores SQL', icono: '🐞', ruta: '/dashboard/log-errores' },
-      { id: 'log-actividad', label: 'Log de Actividad',   icono: '🕵️', ruta: '/dashboard/log-actividad' },
+      { id: 'log-errores',   label: 'Log de Errores SQL', icono: '🐞', ruta: '/dashboard/log-errores',   adminOnly: true },
+      { id: 'log-actividad', label: 'Log de Actividad',   icono: '🕵️', ruta: '/dashboard/log-actividad', adminOnly: true },
     ]
   },
 ]
