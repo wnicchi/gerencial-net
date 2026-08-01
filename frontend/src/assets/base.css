@@ -1,0 +1,120 @@
+/* Fuente de emojis propia (color, Noto Color Emoji) en src/assets/emoji.css,
+   importada desde main.ts. Hace que los emojis se vean igual en cualquier
+   sistema operativo —incluido el servidor viejo— sin depender de la fuente del SO. */
+
+/* Tipografía de la UI con 'Noto Color Emoji' como último fallback, para que
+   CUALQUIER componente que use var(--font-sans) renderice los emojis con Noto
+   (y no con la fuente —vieja— del sistema operativo). */
+:root {
+  --font-sans:
+    Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    'Noto Color Emoji', sans-serif;
+}
+
+/* color palette from <https://github.com/vuejs/theme> */
+:root {
+  --vt-c-white: #ffffff;
+  --vt-c-white-soft: #f8f8f8;
+  --vt-c-white-mute: #f2f2f2;
+
+  --vt-c-black: #181818;
+  --vt-c-black-soft: #222222;
+  --vt-c-black-mute: #282828;
+
+  --vt-c-indigo: #2c3e50;
+
+  --vt-c-divider-light-1: rgba(60, 60, 60, 0.29);
+  --vt-c-divider-light-2: rgba(60, 60, 60, 0.12);
+  --vt-c-divider-dark-1: rgba(84, 84, 84, 0.65);
+  --vt-c-divider-dark-2: rgba(84, 84, 84, 0.48);
+
+  --vt-c-text-light-1: var(--vt-c-indigo);
+  --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
+  --vt-c-text-dark-1: var(--vt-c-white);
+  --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
+}
+
+/* semantic color variables for this project */
+:root {
+  --color-background: var(--vt-c-white);
+  --color-background-soft: var(--vt-c-white-soft);
+  --color-background-mute: var(--vt-c-white-mute);
+
+  --color-border: var(--vt-c-divider-light-2);
+  --color-border-hover: var(--vt-c-divider-light-1);
+
+  --color-heading: var(--vt-c-text-light-1);
+  --color-text: var(--vt-c-text-light-1);
+
+  --section-gap: 160px;
+}
+
+/* RRHH.NET es una app de TEMA CLARO fijo (fondo blanco, texto oscuro). NO se
+   adopta el modo oscuro del SO: con fondos blancos hardcodeados, un --color-text
+   claro dejaba textos invisibles. Mantener las variables claras siempre. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: var(--vt-c-white);
+    --color-background-soft: var(--vt-c-white-soft);
+    --color-background-mute: var(--vt-c-white-mute);
+
+    --color-border: var(--vt-c-divider-light-2);
+    --color-border-hover: var(--vt-c-divider-light-1);
+
+    --color-heading: var(--vt-c-text-light-1);
+    --color-text: var(--vt-c-text-light-1);
+  }
+}
+
+/* Forzar esquema claro en los controles nativos (date pickers, selects, etc.)
+   para que tampoco se rendericen oscuros bajo preferencia dark del SO. */
+:root { color-scheme: light; }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  font-weight: normal;
+}
+
+/* Los controles de formulario (button, input, select, textarea) NO heredan
+   la tipografía del body por defecto: usan la fuente del sistema. Esto hacía
+   que los emojis dentro de <button> (menú lateral, botones de acción) cayeran
+   en la fuente —vieja— del SO. Forzamos que hereden la tipografía (con Noto). */
+button,
+input,
+select,
+textarea,
+optgroup {
+  font-family: inherit;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--color-text);
+  background: var(--color-background);
+  transition:
+    color 0.5s,
+    background-color 0.5s;
+  line-height: 1.6;
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    'Fira Sans',
+    'Droid Sans',
+    'Helvetica Neue',
+    'Noto Color Emoji',
+    sans-serif;
+  font-size: 15px;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

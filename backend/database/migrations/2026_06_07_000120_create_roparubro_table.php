@@ -1,0 +1,21 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('roparubro', function (Blueprint $table) {
+            $table->bigInteger('RRU_COD')->nullable();
+            $table->char('RRU_DES', 50)->nullable();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('roparubro');
+    }
+};

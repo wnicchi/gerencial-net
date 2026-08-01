@@ -1,0 +1,20 @@
+# ─── Configuración local de herramientas (no va al servidor) ───
+.claude/
+*.code-workspace
+
+# ─── Artefactos de migración y dumps de datos ──────────────────
+# (no se necesitan para desplegar y pueden contener datos reales)
+/*.zip
+/*.sql
+config_migracion.php
+migrate_sqlserver_to_mysql.php
+/migrations/
+/migraciones/
+
+# ─── Scripts de arranque local ─────────────────────────────────
+iniciar-rrhh.bat
+
+# ─── Sistema operativo ─────────────────────────────────────────
+Thumbs.db
+.DS_Store
+desktop.ini

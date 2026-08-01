@@ -1,0 +1,56 @@
+{
+  // Tareas de VS Code para RRHH.NET.
+  // "Iniciar RRHH (todo)" arranca solo al abrir la carpeta y levanta las dos
+  // terminales: el backend (php artisan serve) y el frontend (npm run dev).
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Backend — php artisan serve",
+      "type": "shell",
+      "command": "php artisan serve",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "group": "rrhh",
+        "panel": "dedicated",
+        "reveal": "always",
+        "focus": false,
+        "showReuseMessage": false,
+        "clear": false
+      }
+    },
+    {
+      "label": "Frontend — npm run dev",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "group": "rrhh",
+        "panel": "dedicated",
+        "reveal": "always",
+        "focus": false,
+        "showReuseMessage": false,
+        "clear": false
+      }
+    },
+    {
+      "label": "Iniciar RRHH (todo)",
+      "dependsOn": [
+        "Backend — php artisan serve",
+        "Frontend — npm run dev"
+      ],
+      "dependsOrder": "parallel",
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
