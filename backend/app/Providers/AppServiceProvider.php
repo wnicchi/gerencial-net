@@ -66,6 +66,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // ── GERENCIAL.NET: los tokens Sanctum viven en la base de GESTIÓN
+        // (sqlLOGIST), igual que los usuarios contra los que se autentica.
+        \Laravel\Sanctum\Sanctum::usePersonalAccessTokenModel(\App\Models\PersonalAccessToken::class);
+
         // ── Auditoría: registrar la actividad (INSERT/UPDATE/DELETE) de los
         // usuarios, solo en peticiones HTTP (no en comandos/migraciones/colas).
         if (!app()->runningInConsole()) {

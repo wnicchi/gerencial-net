@@ -7,12 +7,10 @@
 -->
 <template>
   <div class="login-container">
-    <div class="panel-logo">
-      <img :src="auth.fondoLogin" alt="RRHH" class="logo-img" />
-    </div>
+    <AuthHero />
     <div class="panel-form">
       <div class="form-card">
-        <h1>Sistema RRHH</h1>
+        <h1>Tablero Gerencial</h1>
         <p class="subtitulo">Recuperar contraseña</p>
 
         <!-- PASO 1: login -->
@@ -87,6 +85,7 @@
 import { ref } from 'vue'
 import { authService } from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
+import AuthHero from '@/components/AuthHero.vue'
 
 const auth = useAuthStore()
 

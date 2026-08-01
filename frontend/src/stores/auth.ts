@@ -107,7 +107,7 @@ export const useAuthStore = defineStore('auth', () => {
     ctx.font = 'bold 34px Arial, Helvetica, sans-serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('RH', 32, 37)
+    ctx.fillText('TG', 32, 37)
     const href = cv.toDataURL('image/png')
     // Quitar cualquier favicon previo (incluido el .ico viejo) y poner el nuevo PNG.
     document.querySelectorAll("link[rel~='icon']").forEach((l) => l.remove())

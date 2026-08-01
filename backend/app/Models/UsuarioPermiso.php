@@ -40,7 +40,15 @@ use Illuminate\Database\Eloquent\Collection;
 class UsuarioPermiso extends Model
 {
     /**
-     * Nombre de la tabla en MySQL.
+     * GERENCIAL.NET: los permisos viven junto a los usuarios en el sistema de
+     * GESTIÓN (sqlLOGIST, conexión 'gestion'), no en la base RRHH.
+     *
+     * @var string
+     */
+    protected $connection = 'gestion';
+
+    /**
+     * Nombre de la tabla.
      *
      * @var string
      */

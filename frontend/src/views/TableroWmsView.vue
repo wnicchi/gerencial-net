@@ -70,30 +70,76 @@
 
         <!-- ── Movimientos por mes ── -->
         <section class="card wide">
-          <h3>🔄 Movimientos de stock por mes <small>(ingresos vs egresos)</small></h3>
-          <Leyenda :items="[['Ingresos', C.c3], ['Egresos', C.c8]]" />
-          <div v-if="sinMovs" class="vacio">Sin movimientos en el período.</div>
-          <svg v-else :viewBox="`0 0 ${WW} ${H}`" class="chart">
-            <g v-for="(m, i) in gruposMov" :key="i">
-              <rect :x="m.x" :y="m.yI" :width="m.bw" :height="m.hI" :fill="C.c3" rx="2"><title>{{ m.label }} · Ingresos: {{ nf(m.ing) }}</title></rect>
-              <rect :x="m.x + m.bw + 2" :y="m.yE" :width="m.bw" :height="m.hE" :fill="C.c8" rx="2"><title>{{ m.label }} · Egresos: {{ nf(m.egr) }}</title></rect>
-              <text :x="m.cx" :y="H - 22" text-anchor="middle" class="ax-x">{{ m.short }}</text>
-            </g>
-          </svg>
+          <div class="card-head">
+            <h3>🔄 Movimientos de stock por mes
+              <small>{{ modoMov === 'todos' ? '(ingresos vs egresos)' : '(total por empresa)' }}</small>
+            </h3>
+            <div class="toggle">
+              <button :class="{ on: modoMov === 'todos' }" @click="modoMov = 'todos'">Todos</button>
+              <button :class="{ on: modoMov === 'empresas' }" @click="modoMov = 'empresas'">Por empresas</button>
+            </div>
+          </div>
+
+          <template v-if="modoMov === 'todos'">
+            <Leyenda :items="[['Ingresos', C.c3], ['Egresos', C.c8]]" />
+            <div v-if="sinMovs" class="vacio">Sin movimientos en el período.</div>
+            <svg v-else :viewBox="`0 0 ${WW} ${H}`" class="chart">
+              <g v-for="(m, i) in gruposMov" :key="i">
+                <rect :x="m.x" :y="m.yI" :width="m.bw" :height="m.hI" :fill="C.c3" rx="2"><title>{{ m.label }} · Ingresos: {{ nf(m.ing) }}</title></rect>
+                <rect :x="m.x + m.bw + 2" :y="m.yE" :width="m.bw" :height="m.hE" :fill="C.c8" rx="2"><title>{{ m.label }} · Egresos: {{ nf(m.egr) }}</title></rect>
+                <text :x="m.cx" :y="H - 22" text-anchor="middle" class="ax-x">{{ m.short }}</text>
+              </g>
+            </svg>
+          </template>
+          <template v-else>
+            <div class="ley-empresas">
+              <span v-for="e in empresasMov" :key="e.empresa" class="ley-item"><span class="ley-dot" :style="{ background: e.color }"></span>{{ e.nombre }}</span>
+            </div>
+            <div v-if="!empresasMov.length" class="vacio">Sin movimientos en el período.</div>
+            <svg v-else :viewBox="`0 0 ${WW} ${H}`" class="chart">
+              <g v-for="(m, i) in stackedMov" :key="i">
+                <rect v-for="(s, j) in m.segs" :key="j" :x="s.x" :y="s.y" :width="s.w" :height="s.h" :fill="s.color"><title>{{ m.label }} · {{ s.nombre }}: {{ nf(s.total) }}</title></rect>
+                <text :x="m.cx" :y="H - 22" text-anchor="middle" class="ax-x">{{ m.short }}</text>
+              </g>
+            </svg>
+          </template>
         </section>
 
         <!-- ── Operación por mes ── -->
         <section class="card wide">
-          <h3>🚚 Operación por mes <small>(recepciones vs despachos)</small></h3>
-          <Leyenda :items="[['Recepciones', C.c1], ['Despachos', C.c2]]" />
-          <div v-if="sinOper" class="vacio">Sin recepciones ni despachos en el período.</div>
-          <svg v-else :viewBox="`0 0 ${WW} ${H}`" class="chart">
-            <g v-for="(m, i) in gruposOper" :key="i">
-              <rect :x="m.x" :y="m.yR" :width="m.bw" :height="m.hR" :fill="C.c1" rx="2"><title>{{ m.label }} · Recepciones: {{ nf(m.rec) }}</title></rect>
-              <rect :x="m.x + m.bw + 2" :y="m.yD" :width="m.bw" :height="m.hD" :fill="C.c2" rx="2"><title>{{ m.label }} · Despachos: {{ nf(m.des) }}</title></rect>
-              <text :x="m.cx" :y="H - 22" text-anchor="middle" class="ax-x">{{ m.short }}</text>
-            </g>
-          </svg>
+          <div class="card-head">
+            <h3>🚚 Operación por mes
+              <small>{{ modoOper === 'todos' ? '(recepciones vs despachos)' : '(total por empresa)' }}</small>
+            </h3>
+            <div class="toggle">
+              <button :class="{ on: modoOper === 'todos' }" @click="modoOper = 'todos'">Todos</button>
+              <button :class="{ on: modoOper === 'empresas' }" @click="modoOper = 'empresas'">Por empresas</button>
+            </div>
+          </div>
+
+          <template v-if="modoOper === 'todos'">
+            <Leyenda :items="[['Recepciones', C.c1], ['Despachos', C.c2]]" />
+            <div v-if="sinOper" class="vacio">Sin recepciones ni despachos en el período.</div>
+            <svg v-else :viewBox="`0 0 ${WW} ${H}`" class="chart">
+              <g v-for="(m, i) in gruposOper" :key="i">
+                <rect :x="m.x" :y="m.yR" :width="m.bw" :height="m.hR" :fill="C.c1" rx="2"><title>{{ m.label }} · Recepciones: {{ nf(m.rec) }}</title></rect>
+                <rect :x="m.x + m.bw + 2" :y="m.yD" :width="m.bw" :height="m.hD" :fill="C.c2" rx="2"><title>{{ m.label }} · Despachos: {{ nf(m.des) }}</title></rect>
+                <text :x="m.cx" :y="H - 22" text-anchor="middle" class="ax-x">{{ m.short }}</text>
+              </g>
+            </svg>
+          </template>
+          <template v-else>
+            <div class="ley-empresas">
+              <span v-for="e in empresasOper" :key="e.empresa" class="ley-item"><span class="ley-dot" :style="{ background: e.color }"></span>{{ e.nombre }}</span>
+            </div>
+            <div v-if="!empresasOper.length" class="vacio">Sin recepciones ni despachos en el período.</div>
+            <svg v-else :viewBox="`0 0 ${WW} ${H}`" class="chart">
+              <g v-for="(m, i) in stackedOper" :key="i">
+                <rect v-for="(s, j) in m.segs" :key="j" :x="s.x" :y="s.y" :width="s.w" :height="s.h" :fill="s.color"><title>{{ m.label }} · {{ s.nombre }}: {{ nf(s.total) }}</title></rect>
+                <text :x="m.cx" :y="H - 22" text-anchor="middle" class="ax-x">{{ m.short }}</text>
+              </g>
+            </svg>
+          </template>
         </section>
       </div>
 
@@ -223,6 +269,51 @@ const gruposOper = computed(() => grupos(data.value?.operacion ?? [], 'recepcion
   .map(g => ({ ...g, rec: g._a, des: g._b, yR: g.yA, hR: g.hA, yD: g.yB, hD: g.hB })))
 const sinOper = computed(() => (data.value?.operacion ?? []).every((m: any) => !m.recepciones && !m.despachos))
 
+// ── Modo Todos / Por empresas (barras apiladas por empresa) ──
+const modoMov  = ref<'todos' | 'empresas'>('todos')
+const modoOper = ref<'todos' | 'empresas'>('todos')
+
+// Color estable por empresa (mismo color en ambos gráficos).
+const PALETA = ['#2a78d6', '#1baf7a', '#eb6834', '#eda100', '#e34948', '#7c5cff', '#0ea5e9', '#84cc16', '#e879f9', '#14b8a6']
+const colorMap = computed(() => {
+  const set = new Map<number, string>()
+  const empresas = new Set<number>()
+  for (const r of (data.value?.movimientos ?? [])) for (const e of r.porEmpresa) empresas.add(e.empresa)
+  for (const r of (data.value?.operacion ?? [])) for (const e of r.porEmpresa) empresas.add(e.empresa)
+  ;[...empresas].sort((a, b) => a - b).forEach((cod, i) => set.set(cod, PALETA[i % PALETA.length]))
+  return set
+})
+const colorEmpresa = (cod: number) => colorMap.value.get(cod) ?? '#94a3b8'
+
+function empresasDe (rows: any[]) {
+  const m = new Map<number, string>()
+  for (const r of rows) for (const e of r.porEmpresa) if (!m.has(e.empresa)) m.set(e.empresa, e.nombre)
+  return [...m.entries()].map(([empresa, nombre]) => ({ empresa, nombre, color: colorEmpresa(empresa) }))
+}
+const empresasMov  = computed(() => empresasDe(data.value?.movimientos ?? []))
+const empresasOper = computed(() => empresasDe(data.value?.operacion ?? []))
+
+// Barras apiladas: cada mes es una barra; cada segmento, una empresa.
+function stacked (rows: any[]) {
+  const totals = rows.map(r => r.porEmpresa.reduce((s: number, e: any) => s + e.total, 0))
+  const max = Math.max(1, ...totals)
+  const pad = 30, top = 18, bottom = 40
+  const gw = rows.length ? (WW - pad) / rows.length : 0
+  const bw = Math.max(6, Math.min(34, gw - 10))
+  return rows.map((r, i) => {
+    const x = pad / 2 + i * gw + (gw - bw) / 2
+    let cursor = H - bottom
+    const segs = r.porEmpresa.map((e: any) => {
+      const hh = (e.total / max) * (H - top - bottom)
+      cursor -= hh
+      return { x, y: cursor, w: bw, h: hh, nombre: e.nombre, total: e.total, color: colorEmpresa(e.empresa) }
+    })
+    return { label: r.label, short: r.label.slice(0, 6), cx: x + bw / 2, segs }
+  })
+}
+const stackedMov  = computed(() => stacked(data.value?.movimientos ?? []))
+const stackedOper = computed(() => stacked(data.value?.operacion ?? []))
+
 async function cargarEmpresas () {
   try { empresas.value = (await api.get('/tablero/wms/empresas')).data } catch { /* sigue global */ }
 }
@@ -268,6 +359,13 @@ onMounted(async () => { await cargarEmpresas(); await cargar() })
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem; }
 .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem 1.1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
 .card.wide { grid-column: 1 / -1; }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
+.card-head h3 { margin: 0; }
+.toggle { display: inline-flex; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; }
+.toggle button { border: none; background: #fff; color: #475569; font-size: 0.78rem; font-weight: 600; padding: 0.32rem 0.75rem; cursor: pointer; transition: background 0.15s; }
+.toggle button:hover { background: #f0faf4; }
+.toggle button.on { background: #1b4332; color: #fff; }
+.ley-empresas { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; margin-bottom: 0.5rem; }
 .card h3 { margin: 0 0 0.7rem; font-size: 0.98rem; color: #1e293b; font-weight: 700; }
 .card h3 small { color: #94a3b8; font-weight: 500; }
 .vacio { color: #94a3b8; font-size: 0.85rem; padding: 1rem 0; text-align: center; }

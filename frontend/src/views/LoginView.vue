@@ -1,15 +1,13 @@
 <template>
   <div class="login-container">
 
-    <!-- Panel izquierdo — Logo -->
-    <div class="panel-logo">
-      <img :src="auth.fondoLogin" alt="Sistema de Recursos Humanos" class="logo-img" />
-    </div>
+    <!-- Panel izquierdo — Hero gerencial (compartido) -->
+    <AuthHero />
 
     <!-- Panel derecho — Formulario -->
     <div class="panel-form">
       <div class="form-card">
-        <h1>Sistema RRHH</h1>
+        <h1>Tablero Gerencial</h1>
         <p class="subtitulo">Iniciá sesión para continuar</p>
 
         <form @submit.prevent="handleLogin">
@@ -59,6 +57,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AuthHero from '@/components/AuthHero.vue'
 
 const router   = useRouter()
 const auth     = useAuthStore()
@@ -86,21 +85,57 @@ async function handleLogin() {
   min-height: 100vh;
 }
 
-/* ── Panel izquierdo ── */
+/* ── Panel izquierdo (hero gerencial) ── */
 .panel-logo {
   flex: 1;
-  background: #f0f0f0;
+  background: radial-gradient(circle at 20% 20%, #2d6a5f 0%, #1b4332 55%, #12291f 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  padding: 3rem;
 }
 
-.logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.hero { max-width: 460px; color: #eafff4; }
+.hero-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.22);
+  color: #d7fbe9;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.32rem 0.8rem;
+  border-radius: 20px;
+  margin-bottom: 1.4rem;
 }
+.hero-title {
+  font-size: 3.2rem;
+  line-height: 1.02;
+  font-weight: 800;
+  margin: 0 0 1rem;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+.hero-sub {
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: #b9e6d1;
+  margin: 0 0 2rem;
+}
+.hero-chips { display: flex; flex-direction: column; gap: 0.6rem; }
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 10px;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.95rem;
+  color: #eafff4;
+  width: fit-content;
+}
+.hc-ico { font-size: 1.15rem; }
 
 /* ── Panel derecho ── */
 .panel-form {

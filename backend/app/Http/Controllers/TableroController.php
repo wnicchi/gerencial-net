@@ -76,8 +76,8 @@ class TableroController extends Controller
                 'kpis'           => $this->kpis($emp),
                 'stockPorEmpresa'=> $this->stockPorEmpresa($nombres),
                 'stockPorEstado' => $this->stockPorEstado($emp),
-                'movimientos'    => $this->movimientosPorMes($emp, $f1, $f2, $meses),
-                'operacion'      => $this->operacionPorMes($emp, $f1, $f2, $meses),
+                'movimientos'    => $this->movimientosPorMes($emp, $f1, $f2, $meses, $nombres),
+                'operacion'      => $this->operacionPorMes($emp, $f1, $f2, $meses, $nombres),
                 'alertas'        => $this->alertasOperativas($emp, $nombres),
             ]);
         } catch (\Throwable $e) {
@@ -158,10 +158,11 @@ class TableroController extends Controller
     }
 
     // ── Movimientos de stock por mes (ingresos I vs egresos E) ───────
-    private function movimientosPorMes(int $emp, \Carbon\Carbon $f1, \Carbon\Carbon $f2, array $meses): array
+    // Además del agregado, adjunta `porEmpresa` por mes (para el modo "por empresas").
+    private function movimientosPorMes(int $emp, \Carbon\Carbon $f1, \Carbon\Carbon $f2, array $meses, array $nombres): array
     {
-        $q = DB::connection(self::CONEXION)->table('MOVI_STOCK')
-            ->whereRaw('CAST(STO_FEC AS DATE) BETWEEN ? AND ?', [$f1->format('Y-m-d'), $f2->format('Y-m-d')]);
+        $rango = [$f1->format('Y-m-d'), $f2->format('Y-m-d')];
+        $q = DB::connection(self::CONEXION)->table('MOVI_STOCK')->whereRaw('CAST(STO_FEC AS DATE) BETWEEN ? AND ?', $rango);
         if ($emp > 0) $q->where('STO_UNE', $emp);
         $rows = $q->selectRaw("
                 YEAR(STO_FEC) as anio, MONTH(STO_FEC) as mes,
@@ -169,55 +170,88 @@ class TableroController extends Controller
                 SUM(CASE WHEN LTRIM(RTRIM(STO_IOE)) = 'E' THEN 0 ELSE 1 END) as ingresos
             ")
             ->groupByRaw('YEAR(STO_FEC), MONTH(STO_FEC)')->get();
-
         $porClave = [];
         foreach ($rows as $r) $porClave[sprintf('%04d-%02d', $r->anio, $r->mes)] = $r;
+
+        // Total de movimientos por (mes, empresa).
+        $qe = DB::connection(self::CONEXION)->table('MOVI_STOCK')->whereRaw('CAST(STO_FEC AS DATE) BETWEEN ? AND ?', $rango);
+        if ($emp > 0) $qe->where('STO_UNE', $emp);
+        $porEmp = $this->indexarPorMesEmpresa(
+            $qe->selectRaw('YEAR(STO_FEC) as anio, MONTH(STO_FEC) as mes, STO_UNE as une, COUNT(*) as n')
+               ->groupByRaw('YEAR(STO_FEC), MONTH(STO_FEC), STO_UNE')->get()
+        );
 
         $out = [];
         foreach ($meses as $clave => $label) {
             $r = $porClave[$clave] ?? null;
             $out[] = [
-                'mes'      => $clave, 'label' => $label,
-                'ingresos' => $r ? (int) $r->ingresos : 0,
-                'egresos'  => $r ? (int) $r->egresos : 0,
+                'mes'       => $clave, 'label' => $label,
+                'ingresos'  => $r ? (int) $r->ingresos : 0,
+                'egresos'   => $r ? (int) $r->egresos : 0,
+                'porEmpresa'=> $this->porEmpresaDelMes($porEmp[$clave] ?? [], $nombres),
             ];
         }
         return $out;
     }
 
     // ── Operación por mes: recepciones y despachos ───────────────────
-    private function operacionPorMes(int $emp, \Carbon\Carbon $f1, \Carbon\Carbon $f2, array $meses): array
+    private function operacionPorMes(int $emp, \Carbon\Carbon $f1, \Carbon\Carbon $f2, array $meses, array $nombres): array
     {
         $con = DB::connection(self::CONEXION);
+        $rango = [$f1->format('Y-m-d'), $f2->format('Y-m-d')];
 
-        // Recepciones (RECEPCION.REC_UNE).
-        $qr = $con->table('RECEPCION')->whereRaw('CAST(REC_FEC AS DATE) BETWEEN ? AND ?', [$f1->format('Y-m-d'), $f2->format('Y-m-d')]);
+        // Recepciones por (mes) y por (mes, empresa) — RECEPCION.REC_UNE.
+        $qr = $con->table('RECEPCION')->whereRaw('CAST(REC_FEC AS DATE) BETWEEN ? AND ?', $rango);
         if ($emp > 0) $qr->where('REC_UNE', $emp);
-        $rec = $qr->selectRaw('YEAR(REC_FEC) as anio, MONTH(REC_FEC) as mes, COUNT(*) as n')
-            ->groupByRaw('YEAR(REC_FEC), MONTH(REC_FEC)')->get();
-        $recPorClave = [];
-        foreach ($rec as $r) $recPorClave[sprintf('%04d-%02d', $r->anio, $r->mes)] = (int) $r->n;
+        $recEmp = $this->indexarPorMesEmpresa(
+            $qr->selectRaw('YEAR(REC_FEC) as anio, MONTH(REC_FEC) as mes, REC_UNE as une, COUNT(*) as n')
+               ->groupByRaw('YEAR(REC_FEC), MONTH(REC_FEC), REC_UNE')->get()
+        );
 
-        // Despachos (DESPACHO por fecha; la empresa vive en DESPA_ITEM.DEI_UNE).
-        $qd = $con->table('DESPACHO as d')->whereRaw('CAST(d.DES_FEC AS DATE) BETWEEN ? AND ?', [$f1->format('Y-m-d'), $f2->format('Y-m-d')]);
-        if ($emp > 0) {
-            $qd->whereIn('d.DES_NRO', function ($sub) use ($emp) {
-                $sub->from('DESPA_ITEM')->select('DEI_NRO')->where('DEI_UNE', $emp);
-            });
-        }
-        $desp = $qd->selectRaw('YEAR(d.DES_FEC) as anio, MONTH(d.DES_FEC) as mes, COUNT(DISTINCT d.DES_NRO) as n')
-            ->groupByRaw('YEAR(d.DES_FEC), MONTH(d.DES_FEC)')->get();
-        $despPorClave = [];
-        foreach ($desp as $r) $despPorClave[sprintf('%04d-%02d', $r->anio, $r->mes)] = (int) $r->n;
+        // Despachos por (mes, empresa) — la empresa vive en DESPA_ITEM.DEI_UNE.
+        $qd = $con->table('DESPACHO as d')->join('DESPA_ITEM as i', 'i.DEI_NRO', '=', 'd.DES_NRO')
+            ->whereRaw('CAST(d.DES_FEC AS DATE) BETWEEN ? AND ?', $rango);
+        if ($emp > 0) $qd->where('i.DEI_UNE', $emp);
+        $despEmp = $this->indexarPorMesEmpresa(
+            $qd->selectRaw('YEAR(d.DES_FEC) as anio, MONTH(d.DES_FEC) as mes, i.DEI_UNE as une, COUNT(DISTINCT d.DES_NRO) as n')
+               ->groupByRaw('YEAR(d.DES_FEC), MONTH(d.DES_FEC), i.DEI_UNE')->get()
+        );
 
         $out = [];
         foreach ($meses as $clave => $label) {
+            $rec = $recEmp[$clave] ?? []; $desp = $despEmp[$clave] ?? [];
+            // Total operación (recepciones + despachos) por empresa para el modo apilado.
+            $comb = $rec;
+            foreach ($desp as $une => $n) $comb[$une] = ($comb[$une] ?? 0) + $n;
             $out[] = [
                 'mes'         => $clave, 'label' => $label,
-                'recepciones' => $recPorClave[$clave] ?? 0,
-                'despachos'   => $despPorClave[$clave] ?? 0,
+                'recepciones' => array_sum($rec),
+                'despachos'   => array_sum($desp),
+                'porEmpresa'  => $this->porEmpresaDelMes($comb, $nombres),
             ];
         }
+        return $out;
+    }
+
+    /** Indexa filas {anio,mes,une,n} en [claveMes => [une => total]]. */
+    private function indexarPorMesEmpresa($rows): array
+    {
+        $out = [];
+        foreach ($rows as $r) {
+            $clave = sprintf('%04d-%02d', $r->anio, $r->mes);
+            $out[$clave][(int) $r->une] = (int) $r->n;
+        }
+        return $out;
+    }
+
+    /** Convierte [une => total] en [{empresa, nombre, total}] ordenado desc. */
+    private function porEmpresaDelMes(array $mapa, array $nombres): array
+    {
+        $out = [];
+        foreach ($mapa as $une => $total) {
+            $out[] = ['empresa' => (int) $une, 'nombre' => $nombres[(int) $une] ?? ('Empresa ' . (int) $une), 'total' => (int) $total];
+        }
+        usort($out, fn ($a, $b) => $b['total'] <=> $a['total']);
         return $out;
     }
 

@@ -49,8 +49,16 @@ class Usuario extends Authenticatable
     use HasApiTokens, Notifiable;
 
     /**
-     * Nombre de la tabla en MySQL.
-     * (Migrada desde SQL Server con el script migrate_sqlserver_to_mysql.php)
+     * GERENCIAL.NET: el login es contra el sistema de GESTIÓN (base sqlLOGIST,
+     * conexión 'gestion'), NO contra los usuarios de RRHH (default = sqlRRHHlog).
+     * Los datos del tablero (RRHH/WMS) usan sus propias conexiones.
+     *
+     * @var string
+     */
+    protected $connection = 'gestion';
+
+    /**
+     * Nombre de la tabla (USUARIOS en sqlLOGIST; SQL Server es case-insensitive).
      *
      * @var string
      */

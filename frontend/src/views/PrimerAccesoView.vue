@@ -2,14 +2,12 @@
   <div class="login-container">
 
     <!-- Panel izquierdo — Logo -->
-    <div class="panel-logo">
-      <img :src="auth.fondoLogin" alt="Sistema de Recursos Humanos" class="logo-img" />
-    </div>
+    <AuthHero />
 
     <!-- Panel derecho — Formulario -->
     <div class="panel-form">
       <div class="form-card">
-        <h1>Sistema RRHH</h1>
+        <h1>Tablero Gerencial</h1>
         <p class="subtitulo">Activación de cuenta</p>
 
         <!-- PASO 1: Nombre de usuario -->
@@ -99,6 +97,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { authService } from '@/services/auth'
+import AuthHero from '@/components/AuthHero.vue'
 
 const router        = useRouter()
 const auth          = useAuthStore()

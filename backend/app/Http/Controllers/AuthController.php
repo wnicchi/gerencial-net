@@ -383,13 +383,12 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // Guardar nueva contraseña hasheada y activar la cuenta
-        // ESTADO=1: los usuarios del sistema anterior venían con ESTADO=0,
-        // se activan automáticamente al completar el proceso de activación.
+        // Guardar nueva contraseña hasheada y activar la cuenta (web).
+        // ⚠️ GERENCIAL: auth contra sqlLOGIST (GESTIÓN). NO tocar ESTADO (es el flag
+        // de sesión del Fox: en 1 bloquea al usuario por "login duplicado") ni CLA_VER
+        // (columna de RRHH que no existe en sqlLOGIST).
         $u->password      = Hash::make($request->password);
         $u->primer_acceso = false;
-        $u->ESTADO        = 1;
-        $u->guardarClaveVisible($request->password);  // copia visible para el admin
         $u->save();
 
         // Eliminar token temporal del cache
@@ -491,9 +490,8 @@ class AuthController extends Controller
             return response()->json(['message' => 'Token inválido o expirado.'], 422);
         }
 
-        // Actualizar contraseña
+        // Actualizar contraseña (sin CLA_VER: no existe en sqlLOGIST)
         $u->password = Hash::make($request->password);
-        $u->guardarClaveVisible($request->password);  // copia visible para el admin
         $u->save();
 
         // Limpiar token usado
@@ -555,11 +553,11 @@ class AuthController extends Controller
         }
 
         $u->password = Hash::make($request->password);
-        $u->guardarClaveVisible($request->password);  // copia visible para el admin
         // Si el usuario estaba forzado a renovar la clave, se desmarca y se reinicia el contador.
-        if (\Illuminate\Support\Facades\Schema::hasColumn('usuarios', 'renovar')) {
+        // hasColumn sobre la conexión 'gestion' (sqlLOGIST), donde vive el usuario.
+        if (\Illuminate\Support\Facades\Schema::connection('gestion')->hasColumn('usuarios', 'renovar')) {
             $u->renovar = 0;
-            if (\Illuminate\Support\Facades\Schema::hasColumn('usuarios', 'contador')) $u->contador = 0;
+            if (\Illuminate\Support\Facades\Schema::connection('gestion')->hasColumn('usuarios', 'contador')) $u->contador = 0;
         }
         $u->save();
 
