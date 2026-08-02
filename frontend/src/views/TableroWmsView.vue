@@ -69,6 +69,27 @@
           </svg>
         </section>
 
+        <!-- ── Torta: participación por empresa ── -->
+        <section class="card">
+          <h3>🥧 Participación en el stock por empresa <small>(posiciones)</small></h3>
+          <div v-if="!torta.length" class="vacio">Sin stock.</div>
+          <div v-else class="torta-wrap">
+            <svg viewBox="0 0 180 180" class="torta-svg">
+              <path v-for="(s, i) in torta" :key="i" :d="s.d" :fill="s.color" stroke="#fff" stroke-width="1.5">
+                <title>{{ s.nombre }}: {{ nf(s.pos) }} pos ({{ s.pct.toFixed(1) }}%)</title>
+              </path>
+              <text v-for="(s, i) in tortaLabels" :key="'l' + i" :x="s.lx" :y="s.ly" text-anchor="middle" dominant-baseline="middle" class="torta-lbl">{{ s.pct.toFixed(0) }}%</text>
+            </svg>
+            <div class="torta-leg">
+              <div v-for="(s, i) in torta" :key="i" class="torta-leg-item">
+                <span class="torta-dot" :style="{ background: s.color }"></span>
+                <span class="torta-nom" :title="s.nombre">{{ s.nombre }}</span>
+                <span class="torta-val">{{ s.pct.toFixed(1) }}% · {{ nf(s.pos) }}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- ── Movimientos por mes ── -->
         <section class="card wide">
           <div class="card-head">
@@ -297,6 +318,7 @@ const PALETA = ['#2a78d6', '#1baf7a', '#eb6834', '#eda100', '#e34948', '#7c5cff'
 const colorMap = computed(() => {
   const set = new Map<number, string>()
   const empresas = new Set<number>()
+  for (const e of (data.value?.stockPorEmpresa ?? [])) empresas.add(e.empresa)
   for (const r of (data.value?.movimientos ?? [])) for (const e of r.porEmpresa) empresas.add(e.empresa)
   for (const r of (data.value?.operacion ?? [])) for (const e of r.porEmpresa) empresas.add(e.empresa)
   ;[...empresas].sort((a, b) => a - b).forEach((cod, i) => set.set(cod, PALETA[i % PALETA.length]))
@@ -333,6 +355,30 @@ function stacked (rows: any[]) {
 const stackedMov  = computed(() => stacked(data.value?.movimientos ?? []))
 const stackedOper = computed(() => stacked(data.value?.operacion ?? []))
 
+// ── Torta: participación de cada empresa/cliente en el stock (posiciones) ──
+const torta = computed(() => {
+  const items = (data.value?.stockPorEmpresa ?? []).filter((e: any) => e.posiciones > 0)
+  const total = items.reduce((s: number, e: any) => s + e.posiciones, 0)
+  if (total <= 0) return []
+  const cx = 90, cy = 90, R = 82
+  let ang = -Math.PI / 2   // arranca arriba
+  return items.map((e: any) => {
+    const frac = e.posiciones / total
+    const a0 = ang, a1 = ang + frac * 2 * Math.PI
+    ang = a1
+    const mid = (a0 + a1) / 2
+    const p = (r: number, a: number) => [(cx + r * Math.cos(a)).toFixed(2), (cy + r * Math.sin(a)).toFixed(2)]
+    const [x0, y0] = p(R, a0); const [x1, y1] = p(R, a1); const [lx, ly] = p(R * 0.6, mid)
+    const large = (a1 - a0) > Math.PI ? 1 : 0
+    // Una sola empresa (100%) → círculo completo.
+    const d = frac >= 0.999
+      ? `M ${cx - R} ${cy} A ${R} ${R} 0 1 1 ${cx + R} ${cy} A ${R} ${R} 0 1 1 ${cx - R} ${cy} Z`
+      : `M ${cx} ${cy} L ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1} Z`
+    return { d, color: colorEmpresa(e.empresa), nombre: e.nombre, pos: e.posiciones, pct: frac * 100, lx, ly, mostrar: frac >= 0.05 }
+  })
+})
+const tortaLabels = computed(() => torta.value.filter((s: any) => s.mostrar))
+
 async function cargarEmpresas () {
   try { empresas.value = (await api.get('/tablero/wms/empresas')).data } catch { /* sigue global */ }
 }
@@ -361,6 +407,7 @@ const sinEmoji = (s: string) => s.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}
 const SVG_CSS = `
   text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
   .ax-x{fill:#64748b;font-size:9px}.ax-v{fill:#475569;font-size:9px;font-weight:600}
+  .torta-lbl{fill:#fff;font-size:10px;font-weight:700}
 `
 function svgAPng (svg: SVGSVGElement, escala = 2): Promise<{ url: string; w: number; h: number }> {
   const vb = (svg.getAttribute('viewBox') || '0 0 720 220').split(/\s+/).map(Number)
@@ -422,10 +469,13 @@ async function imprimirPDF () {
       const titulo = sinEmoji(card.querySelector('h3')?.textContent || '')
       const { url, w, h } = await svgAPng(svg)
       if (!url) continue
-      const imgW = W, imgH = imgW * (h / w)
+      let imgW = W, imgH = imgW * (h / w)
+      const maxH = 95   // los gráficos cuadrados (torta) no deben ocupar toda la hoja
+      if (imgH > maxH) { imgH = maxH; imgW = imgH * (w / h) }
+      const imgX = ML + (W - imgW) / 2
       if (y + 8 + imgH > PH - 14) { doc.addPage(); y = 16 }
       doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(30, 41, 59); doc.text(titulo, ML, y); y += 4
-      doc.addImage(url, 'PNG', ML, y, imgW, imgH); y += imgH + 8
+      doc.addImage(url, 'PNG', imgX, y, imgW, imgH); y += imgH + 8
     }
 
     // Tablas de datos
@@ -528,6 +578,16 @@ onMounted(async () => { await cargarEmpresas(); await cargar() })
 .hbar-track { background: #f1f5f9; border-radius: 5px; height: 16px; overflow: hidden; }
 .hbar-fill { height: 100%; border-radius: 5px; transition: width 0.3s; }
 .hbar-val { font-size: 0.78rem; font-weight: 700; color: #1e293b; text-align: right; }
+
+/* Torta de participación por empresa */
+.torta-wrap { display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap; }
+.torta-svg { width: 170px; height: 170px; flex-shrink: 0; }
+.torta-lbl { font-size: 10px; fill: #fff; font-weight: 700; paint-order: stroke; stroke: rgba(0,0,0,0.25); stroke-width: 2px; }
+.torta-leg { display: flex; flex-direction: column; gap: 0.4rem; min-width: 180px; flex: 1; }
+.torta-leg-item { display: grid; grid-template-columns: 12px 1fr auto; align-items: center; gap: 0.5rem; font-size: 0.8rem; }
+.torta-dot { width: 12px; height: 12px; border-radius: 3px; }
+.torta-nom { color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.torta-val { color: #1e293b; font-weight: 600; white-space: nowrap; }
 
 /* Leyenda */
 :deep(.leyenda) { display: flex; gap: 1rem; margin-bottom: 0.4rem; }
