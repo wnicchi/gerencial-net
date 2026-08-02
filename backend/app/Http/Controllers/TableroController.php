@@ -416,6 +416,55 @@ class TableroController extends Controller
         return $out;
     }
 
+    /**
+     * @route GET /api/tablero/wms/antiguedad-detalle?rango=&empresa=
+     * Drill-down de "Antigüedad del stock": los productos/posiciones que caen en el
+     * rango de antigüedad elegido, ordenados por unidades (lo más valioso primero).
+     */
+    public function antiguedadDetalle(Request $request): JsonResponse
+    {
+        $d = $request->validate(['rango' => 'required|string', 'empresa' => 'nullable|integer']);
+        $emp = (int) ($d['empresa'] ?? 0);
+        $rango = $d['rango'];
+        try {
+            $q = DB::connection(self::CONEXION)->table('STOCK as s')
+                ->leftJoin('PRODUCTOS as p', DB::raw('LTRIM(RTRIM(UPPER(s.STA_PN)))'), '=', DB::raw('LTRIM(RTRIM(UPPER(p.PRO_PN)))'));
+            if ($emp > 0) $q->where('s.STA_UNE', $emp);
+            $rows = $q->get(['s.STA_UNE', 's.STA_PN', 's.STA_DES', 's.STA_STP', 's.STA_FEC', 'p.PRO_DES']);
+
+            $hoy = \Carbon\Carbon::today();
+            $nombres = $this->nombresEmpresa();
+            // Agregado por (empresa, P.N.): suma unidades, cuenta posiciones y toma la más antigua.
+            $agg = [];
+            foreach ($rows as $r) {
+                $f = $this->fecha($r->STA_FEC);
+                $dias = $f ? (int) $f->diffInDays($hoy) : -1;
+                $key = $dias < 0 ? 'Sin fecha' : ($dias <= 30 ? '0 a 30 días' : ($dias <= 90 ? '31 a 90 días' : ($dias <= 180 ? '91 a 180 días' : 'Más de 180 días')));
+                if ($key !== $rango) continue;
+                $une = (int) $r->STA_UNE; $pn = trim((string) $r->STA_PN);
+                $k = $une . '|' . mb_strtoupper($pn);
+                if (!isset($agg[$k])) $agg[$k] = [
+                    'empresa'    => $nombres[$une] ?? ('Empresa ' . $une),
+                    'pn'         => $pn,
+                    'des'        => trim((string) ($r->PRO_DES ?: $r->STA_DES)),
+                    'unidades'   => 0.0, 'posiciones' => 0,
+                    'fecha'      => $f ? $f->format('Y-m-d') : '', 'dias' => $dias < 0 ? null : $dias,
+                ];
+                $agg[$k]['unidades'] += (float) $r->STA_STP;
+                $agg[$k]['posiciones']++;
+                if ($dias >= 0 && ($agg[$k]['dias'] === null || $dias > $agg[$k]['dias'])) { $agg[$k]['dias'] = $dias; if ($f) $agg[$k]['fecha'] = $f->format('Y-m-d'); }
+            }
+            $out = array_values($agg);
+            foreach ($out as &$o) $o['unidades'] = round($o['unidades'], 2);
+            unset($o);
+            usort($out, fn ($a, $b) => $b['unidades'] <=> $a['unidades']);
+            return response()->json(['rango' => $rango, 'total' => count($out), 'rows' => array_slice($out, 0, 500)]);
+        } catch (\Throwable $e) {
+            \App\Support\RegistroError::registrar($e, $request, 'TABLERO-WMS');
+            return response()->json(['message' => 'No se pudo obtener el detalle de antigüedad.'], 500);
+        }
+    }
+
     // ── Alertas operativas del stock (vencidos / por vencer / bloqueado) ──
     private function alertasOperativas(int $emp, array $nombres): array
     {

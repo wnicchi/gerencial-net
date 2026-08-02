@@ -973,6 +973,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\VerificarPermisoModulo::
 
     // ── Tablero Gerencial · Stock/Logística (WMS, base LOGIST_UNIVERSAL) ──
     Route::get   ('tablero/wms/empresas', [\App\Http\Controllers\TableroController::class, 'empresas']);
+    Route::get   ('tablero/wms/antiguedad-detalle', [\App\Http\Controllers\TableroController::class, 'antiguedadDetalle']);
     Route::get   ('tablero/wms',          [\App\Http\Controllers\TableroController::class, 'wms']);
     Route::get   ('liquidaciones/consultar', [LiquidacionController::class, 'consultar']);
     Route::delete('liquidaciones',           [LiquidacionController::class, 'borrar']);

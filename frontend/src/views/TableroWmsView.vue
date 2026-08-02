@@ -148,11 +148,11 @@
 
         <!-- ── Antigüedad del stock ── -->
         <section class="card">
-          <h3>⏳ Antigüedad del stock <small>(posiciones por antigüedad de ingreso)</small></h3>
+          <h3>⏳ Antigüedad del stock <small>(clic en un rango para ver los productos)</small></h3>
           <div v-if="!antiguedad.length" class="vacio">Sin datos.</div>
           <div v-else class="hbars">
-            <div v-for="a in antiguedad" :key="a.rango" class="hbar-row">
-              <span class="hbar-lbl" :title="a.rango">{{ a.rango }}</span>
+            <div v-for="a in antiguedad" :key="a.rango" class="hbar-row hbar-click" @click="abrirAntiguedad(a.rango)" :title="'Ver productos: ' + a.rango">
+              <span class="hbar-lbl">{{ a.rango }}</span>
               <div class="hbar-track">
                 <div class="hbar-fill" :style="{ width: pct(a.posiciones, maxAntiguedad) + '%', background: colorAntiguedad(a.rango) }"></div>
               </div>
@@ -321,6 +321,40 @@
             </div>
           </div>
           <iframe ref="pf" :src="pdfUrl" class="es-pdf-frame"></iframe>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Detalle de antigüedad (drill-down: productos del rango) -->
+    <Teleport to="body">
+      <div v-if="drillOpen" class="es-pdf-ov" @click.self="cerrarDrill">
+        <div class="es-pdf-md">
+          <div class="es-pdf-head">
+            <span>⏳ Antigüedad · {{ drillRango }} — {{ nf(drillTotal) }} posiciones</span>
+            <div class="es-pdf-acc">
+              <button class="es-pdf-b cancel" @click="cerrarDrill">✕ Cerrar</button>
+            </div>
+          </div>
+          <div class="drill-body">
+            <div v-if="drillCargando" class="cargando">Cargando…</div>
+            <table v-else class="drill-tabla">
+              <thead>
+                <tr><th>Empresa</th><th>P.N.</th><th>Descripción</th><th class="r">Unidades</th><th class="r">Posic.</th><th>Ingreso + viejo</th><th class="r">Días</th></tr>
+              </thead>
+              <tbody>
+                <tr v-for="(r, i) in drillRows" :key="i">
+                  <td>{{ r.empresa }}</td>
+                  <td>{{ r.pn }}</td>
+                  <td>{{ r.des }}</td>
+                  <td class="r">{{ nf(r.unidades) }}</td>
+                  <td class="r">{{ nf(r.posiciones) }}</td>
+                  <td>{{ fmtFecha(r.fecha) }}</td>
+                  <td class="r">{{ r.dias ?? '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p v-if="!drillCargando && drillTotal > drillRows.length" class="drill-nota">Mostrando las primeras {{ nf(drillRows.length) }} de {{ nf(drillTotal) }} (ordenadas por unidades).</p>
+          </div>
         </div>
       </div>
     </Teleport>
@@ -498,6 +532,18 @@ const ANTIG_COLOR: Record<string, string> = {
   '0 a 30 días': C.c3, '31 a 90 días': C.c4, '91 a 180 días': C.c2, 'Más de 180 días': C.c8, 'Sin fecha': '#94a3b8',
 }
 const colorAntiguedad = (r: string) => ANTIG_COLOR[r] ?? '#94a3b8'
+
+// ── Drill-down de antigüedad: qué productos hay en cada rango ──
+const drillRango = ref(''); const drillRows = ref<any[]>([]); const drillTotal = ref(0); const drillCargando = ref(false)
+const drillOpen = computed(() => drillRango.value !== '')
+const cerrarDrill = () => { drillRango.value = ''; drillRows.value = [] }
+async function abrirAntiguedad (rango: string) {
+  drillRango.value = rango; drillRows.value = []; drillTotal.value = 0; drillCargando.value = true
+  try {
+    const { data: d } = await api.get('/tablero/wms/antiguedad-detalle', { params: { rango, empresa: empresa.value } })
+    drillRows.value = d.rows; drillTotal.value = d.total
+  } catch { drillRows.value = [] } finally { drillCargando.value = false }
+}
 
 // ── Gráfico de línea: recepciones/despachos por semana (Total o Por empresas) ──
 const modoSemanal = ref<'total' | 'empresas'>('total')
@@ -704,6 +750,17 @@ onMounted(async () => { await cargarEmpresas(); await cargar() })
 .es-pdf-b.ok { background: #22c55e; color: #fff; }
 .es-pdf-b.cancel { background: #ef4444; color: #fff; }
 .es-pdf-frame { flex: 1; border: none; width: 100%; }
+
+/* Drill-down de antigüedad */
+.hbar-click { cursor: pointer; border-radius: 6px; transition: background 0.15s; }
+.hbar-click:hover { background: #f1f5f9; }
+.drill-body { flex: 1; overflow: auto; background: #fff; }
+.drill-tabla { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.drill-tabla th { position: sticky; top: 0; background: #f0faf4; color: #1b4332; text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid #c3e6cb; font-weight: 700; white-space: nowrap; }
+.drill-tabla td { padding: 0.4rem 0.7rem; border-bottom: 1px solid #eef2f7; color: #334155; }
+.drill-tabla tr:hover td { background: #f8fafc; }
+.drill-tabla .r { text-align: right; }
+.drill-nota { padding: 0.7rem; color: #94a3b8; font-size: 0.78rem; text-align: center; margin: 0; }
 
 .msg-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 0.7rem 1rem; border-radius: 8px; margin-bottom: 1rem; }
 .cargando { color: #64748b; padding: 2rem; text-align: center; }
