@@ -347,10 +347,11 @@ class AdminController extends Controller
 
         $usuario = Usuario::where('CODIGO', $codigo)->firstOrFail();
 
+        // ⚠️ GERENCIAL: auth sobre sqlLOGIST (GESTIÓN). NO tocar ESTADO (flag de sesión
+        // del Fox: en 1 bloquea al usuario por "login duplicado") ni CLA_VER (columna de
+        // RRHH que no existe en sqlLOGIST). Solo se define la clave y se activa la cuenta.
         $usuario->password      = Hash::make($request->password);
         $usuario->primer_acceso = 0;
-        $usuario->ESTADO        = 1;
-        $usuario->guardarClaveVisible($request->password);  // copia visible para el admin
         $usuario->save();
 
         // Cerrar cualquier sesión abierta con la clave anterior
