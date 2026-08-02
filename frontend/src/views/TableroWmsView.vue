@@ -114,12 +114,14 @@
         <!-- ── Ranking: empresas que más mueven (recepciones + despachos) ── -->
         <section class="card">
           <h3>🚚 Empresas que más mueven <small>(recepciones + despachos)</small></h3>
+          <Leyenda :items="[['Recepciones', C.c1], ['Despachos', C.c2]]" />
           <div v-if="!actividadPorEmpresa.length" class="vacio">Sin operación en el período.</div>
           <div v-else class="hbars">
             <div v-for="e in actividadPorEmpresa" :key="e.empresa" class="hbar-row">
               <span class="hbar-lbl" :title="e.nombre">{{ e.nombre }}</span>
-              <div class="hbar-track">
-                <div class="hbar-fill" :style="{ width: pct(e.total, maxActividad) + '%', background: colorEmpresa(e.empresa) }"></div>
+              <div class="hbar-track split">
+                <div class="hbar-seg" :style="{ width: (e.recepciones / maxActividad * 100) + '%', background: C.c1 }" :title="'Recepciones: ' + nf(e.recepciones)"></div>
+                <div class="hbar-seg" :style="{ width: (e.despachos / maxActividad * 100) + '%', background: C.c2 }" :title="'Despachos: ' + nf(e.despachos)"></div>
               </div>
               <span class="hbar-val">{{ nf(e.total) }}</span>
             </div>
@@ -444,19 +446,10 @@ const tortaLabels = computed(() => torta.value.filter((s: any) => s.mostrar))
 const tortaEstado = computed(() => pieSlices(data.value?.stockPorEstado ?? [], (e) => e.posiciones, (e) => estadoColor(e.tip), (e) => e.estado))
 const tortaEstadoLabels = computed(() => tortaEstado.value.filter((s: any) => s.mostrar))
 
-// ── Ranking de empresas por actividad (recepciones + despachos del período) ──
-const actividadPorEmpresa = computed(() => {
-  const map = new Map<number, { empresa: number; nombre: string; total: number }>()
-  for (const m of (data.value?.operacion ?? [])) {
-    for (const e of m.porEmpresa) {
-      const cur = map.get(e.empresa) ?? { empresa: e.empresa, nombre: e.nombre, total: 0 }
-      cur.total += e.total
-      map.set(e.empresa, cur)
-    }
-  }
-  return [...map.values()].sort((a, b) => b.total - a.total)
-})
-const maxActividad = computed(() => Math.max(1, ...actividadPorEmpresa.value.map((e) => e.total)))
+// ── Ranking de empresas por actividad (recepciones + despachos), del backend
+//    con el desglose para la barra dividida en dos colores. ──
+const actividadPorEmpresa = computed<any[]>(() => data.value?.actividadEmpresa ?? [])
+const maxActividad = computed(() => Math.max(1, ...actividadPorEmpresa.value.map((e: any) => e.total)))
 
 // ── Gráfico de línea: recepciones/despachos por semana (Total o Por empresas) ──
 const modoSemanal = ref<'total' | 'empresas'>('total')
@@ -613,8 +606,8 @@ async function imprimirPDF () {
       data.value.stockPorEmpresa.map((e: any) => [e.nombre, nf(e.posiciones), nf(e.unidades)]), [110, 38, 38])
     tabla('Stock por estado', ['Estado', 'Posiciones', 'Unidades'],
       data.value.stockPorEstado.map((e: any) => [e.estado, nf(e.posiciones), nf(e.unidades)]), [110, 38, 38])
-    tabla('Empresas que más mueven (Recep. + Desp.)', ['Empresa', 'Movimientos'],
-      actividadPorEmpresa.value.map((e: any) => [e.nombre, nf(e.total)]), [130, 50])
+    tabla('Empresas que más mueven', ['Empresa', 'Recep.', 'Desp.', 'Total'],
+      actividadPorEmpresa.value.map((e: any) => [e.nombre, nf(e.recepciones), nf(e.despachos), nf(e.total)]), [104, 28, 28, 26])
     tabla('Alertas — Productos vencidos', ['Empresa', 'P.N.', 'Descripción', 'Vence', 'Unid.'],
       data.value.alertas.vencidos.map((v: any) => [v.empresa, v.pn, v.des, fmtFecha(v.vence), nf(v.unidades)]), [42, 26, 62, 26, 20])
     tabla('Alertas — Próximos a vencer', ['Empresa', 'P.N.', 'Descripción', 'Vence', 'Unid.'],
@@ -694,6 +687,8 @@ onMounted(async () => { await cargarEmpresas(); await cargar() })
 .hbar-lbl { font-size: 0.78rem; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hbar-track { background: #f1f5f9; border-radius: 5px; height: 16px; overflow: hidden; }
 .hbar-fill { height: 100%; border-radius: 5px; transition: width 0.3s; }
+.hbar-track.split { display: flex; }
+.hbar-seg { height: 100%; transition: width 0.3s; }
 .hbar-val { font-size: 0.78rem; font-weight: 700; color: #1e293b; text-align: right; }
 
 /* Torta de participación por empresa */

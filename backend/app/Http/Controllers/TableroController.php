@@ -79,6 +79,7 @@ class TableroController extends Controller
                 'movimientos'    => $this->movimientosPorMes($emp, $f1, $f2, $meses, $nombres),
                 'operacion'      => $this->operacionPorMes($emp, $f1, $f2, $meses, $nombres),
                 'operacionSemanal' => $this->operacionSemanal($emp, $f1, $f2, $nombres),
+                'actividadEmpresa' => $this->actividadEmpresa($emp, $f1, $f2, $nombres),
                 'alertas'        => $this->alertasOperativas($emp, $nombres),
             ]);
         } catch (\Throwable $e) {
@@ -285,6 +286,36 @@ class TableroController extends Controller
                 'porEmpresa'  => $this->porEmpresaDelMes($comb, $nombres),
             ];
         }
+        return $out;
+    }
+
+    /**
+     * Actividad por empresa en el período, con el DESGLOSE recepciones / despachos
+     * (para el ranking con barra dividida en dos colores). Respeta el filtro `empresa`.
+     */
+    private function actividadEmpresa(int $emp, \Carbon\Carbon $f1, \Carbon\Carbon $f2, array $nombres): array
+    {
+        $con = DB::connection(self::CONEXION);
+        $rango = [$f1->format('Y-m-d'), $f2->format('Y-m-d')];
+
+        $rec = [];
+        $qr = $con->table('RECEPCION')->whereRaw('CAST(REC_FEC AS DATE) BETWEEN ? AND ?', $rango);
+        if ($emp > 0) $qr->where('REC_UNE', $emp);
+        foreach ($qr->selectRaw('REC_UNE as une, COUNT(*) as n')->groupBy('REC_UNE')->get() as $r) $rec[(int) $r->une] = (int) $r->n;
+
+        $desp = [];
+        $qd = $con->table('DESPACHO as d')->join('DESPA_ITEM as i', 'i.DEI_NRO', '=', 'd.DES_NRO')
+            ->whereRaw('CAST(d.DES_FEC AS DATE) BETWEEN ? AND ?', $rango);
+        if ($emp > 0) $qd->where('i.DEI_UNE', $emp);
+        foreach ($qd->selectRaw('i.DEI_UNE as une, COUNT(DISTINCT d.DES_NRO) as n')->groupBy('i.DEI_UNE')->get() as $r) $desp[(int) $r->une] = (int) $r->n;
+
+        $unes = array_unique(array_merge(array_keys($rec), array_keys($desp)));
+        $out = [];
+        foreach ($unes as $u) {
+            $r = $rec[$u] ?? 0; $d = $desp[$u] ?? 0;
+            $out[] = ['empresa' => (int) $u, 'nombre' => $nombres[(int) $u] ?? ('Empresa ' . $u), 'recepciones' => $r, 'despachos' => $d, 'total' => $r + $d];
+        }
+        usort($out, fn ($a, $b) => $b['total'] <=> $a['total']);
         return $out;
     }
 
