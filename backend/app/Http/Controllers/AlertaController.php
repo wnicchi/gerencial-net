@@ -226,12 +226,8 @@ class AlertaController extends Controller
                 }
                 return $l ? ['titulo' => $titulo, 'lineas' => $l] : null;
             };
-            // Vencidos en el último año: hoy-365 < EXA_VEN < hoy
-            $v = $examSeccion('EXAMENES VENCIDOS EN EL ULTIMO AÑO', function ($q) use ($hoy) {
-                $q->whereRaw('CAST(x.EXA_VEN AS DATE) < ?', [$hoy->format('Y-m-d')])
-                  ->whereRaw('CAST(x.EXA_VEN AS DATE) > ?', [$hoy->copy()->subDays(365)->format('Y-m-d')]);
-            });
-            if ($v) $sec[] = $v;
+            // GERENCIAL: no se muestran los EXÁMENES VENCIDOS (pedido del usuario);
+            // solo interesan los próximos a vencer.
             // Próximos: hoy+15 < EXA_VEN < hoy+30
             $p = $examSeccion('PROXIMOS EXAMENES', function ($q) use ($hoy) {
                 $q->whereRaw('CAST(x.EXA_VEN AS DATE) > ?', [$hoy->copy()->addDays(15)->format('Y-m-d')])
