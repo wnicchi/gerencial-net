@@ -128,6 +128,39 @@
           </div>
         </section>
 
+        <!-- ── Ocupación por nave (distribución física) ── -->
+        <section class="card">
+          <h3>🏭 Ocupación por nave <small>(posiciones)</small></h3>
+          <div class="ley-empresas" v-if="ocupacionNave.length">
+            <span v-for="e in empresasNave" :key="e.empresa" class="ley-item"><span class="ley-dot" :style="{ background: e.color }"></span>{{ e.nombre }}</span>
+          </div>
+          <div v-if="!ocupacionNave.length" class="vacio">Sin datos.</div>
+          <div v-else class="hbars">
+            <div v-for="n in ocupacionNave" :key="n.nave" class="hbar-row">
+              <span class="hbar-lbl" :title="n.nave">{{ n.nave }}</span>
+              <div class="hbar-track split">
+                <div v-for="(e, i) in n.porEmpresa" :key="i" class="hbar-seg" :style="{ width: (e.total / maxNave * 100) + '%', background: colorEmpresa(e.empresa) }" :title="e.nombre + ': ' + nf(e.total)"></div>
+              </div>
+              <span class="hbar-val">{{ nf(n.posiciones) }}</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Antigüedad del stock ── -->
+        <section class="card">
+          <h3>⏳ Antigüedad del stock <small>(posiciones por antigüedad de ingreso)</small></h3>
+          <div v-if="!antiguedad.length" class="vacio">Sin datos.</div>
+          <div v-else class="hbars">
+            <div v-for="a in antiguedad" :key="a.rango" class="hbar-row">
+              <span class="hbar-lbl" :title="a.rango">{{ a.rango }}</span>
+              <div class="hbar-track">
+                <div class="hbar-fill" :style="{ width: pct(a.posiciones, maxAntiguedad) + '%', background: colorAntiguedad(a.rango) }"></div>
+              </div>
+              <span class="hbar-val">{{ nf(a.posiciones) }}</span>
+            </div>
+          </div>
+        </section>
+
         <!-- ── Movimientos por mes ── -->
         <section class="card wide">
           <div class="card-head">
@@ -382,6 +415,8 @@ const colorMap = computed(() => {
   const set = new Map<number, string>()
   const empresas = new Set<number>()
   for (const e of (data.value?.stockPorEmpresa ?? [])) empresas.add(e.empresa)
+  for (const e of (data.value?.actividadEmpresa ?? [])) empresas.add(e.empresa)
+  for (const n of (data.value?.ocupacionNave ?? [])) for (const e of n.porEmpresa) empresas.add(e.empresa)
   for (const r of (data.value?.movimientos ?? [])) for (const e of r.porEmpresa) empresas.add(e.empresa)
   for (const r of (data.value?.operacion ?? [])) for (const e of r.porEmpresa) empresas.add(e.empresa)
   ;[...empresas].sort((a, b) => a - b).forEach((cod, i) => set.set(cod, PALETA[i % PALETA.length]))
@@ -450,6 +485,19 @@ const tortaEstadoLabels = computed(() => tortaEstado.value.filter((s: any) => s.
 //    con el desglose para la barra dividida en dos colores. ──
 const actividadPorEmpresa = computed<any[]>(() => data.value?.actividadEmpresa ?? [])
 const maxActividad = computed(() => Math.max(1, ...actividadPorEmpresa.value.map((e: any) => e.total)))
+
+// ── Ocupación por nave (barra apilada por empresa) ──
+const ocupacionNave = computed<any[]>(() => data.value?.ocupacionNave ?? [])
+const maxNave = computed(() => Math.max(1, ...ocupacionNave.value.map((n: any) => n.posiciones)))
+const empresasNave = computed(() => empresasDe(ocupacionNave.value))
+
+// ── Antigüedad del stock (barras con semáforo verde→rojo) ──
+const antiguedad = computed<any[]>(() => data.value?.antiguedad ?? [])
+const maxAntiguedad = computed(() => Math.max(1, ...antiguedad.value.map((a: any) => a.posiciones)))
+const ANTIG_COLOR: Record<string, string> = {
+  '0 a 30 días': C.c3, '31 a 90 días': C.c4, '91 a 180 días': C.c2, 'Más de 180 días': C.c8, 'Sin fecha': '#94a3b8',
+}
+const colorAntiguedad = (r: string) => ANTIG_COLOR[r] ?? '#94a3b8'
 
 // ── Gráfico de línea: recepciones/despachos por semana (Total o Por empresas) ──
 const modoSemanal = ref<'total' | 'empresas'>('total')
@@ -608,6 +656,10 @@ async function imprimirPDF () {
       data.value.stockPorEstado.map((e: any) => [e.estado, nf(e.posiciones), nf(e.unidades)]), [110, 38, 38])
     tabla('Empresas que más mueven', ['Empresa', 'Recep.', 'Desp.', 'Total'],
       actividadPorEmpresa.value.map((e: any) => [e.nombre, nf(e.recepciones), nf(e.despachos), nf(e.total)]), [104, 28, 28, 26])
+    tabla('Ocupación por nave', ['Nave', 'Posiciones', 'Unidades'],
+      ocupacionNave.value.map((n: any) => [n.nave, nf(n.posiciones), nf(n.unidades)]), [110, 38, 38])
+    tabla('Antigüedad del stock', ['Antigüedad', 'Posiciones', 'Unidades'],
+      antiguedad.value.map((a: any) => [a.rango, nf(a.posiciones), nf(a.unidades)]), [110, 38, 38])
     tabla('Alertas — Productos vencidos', ['Empresa', 'P.N.', 'Descripción', 'Vence', 'Unid.'],
       data.value.alertas.vencidos.map((v: any) => [v.empresa, v.pn, v.des, fmtFecha(v.vence), nf(v.unidades)]), [42, 26, 62, 26, 20])
     tabla('Alertas — Próximos a vencer', ['Empresa', 'P.N.', 'Descripción', 'Vence', 'Unid.'],

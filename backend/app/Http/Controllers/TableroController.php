@@ -80,6 +80,8 @@ class TableroController extends Controller
                 'operacion'      => $this->operacionPorMes($emp, $f1, $f2, $meses, $nombres),
                 'operacionSemanal' => $this->operacionSemanal($emp, $f1, $f2, $nombres),
                 'actividadEmpresa' => $this->actividadEmpresa($emp, $f1, $f2, $nombres),
+                'ocupacionNave'  => $this->ocupacionNave($emp, $nombres),
+                'antiguedad'     => $this->antiguedadStock($emp),
                 'alertas'        => $this->alertasOperativas($emp, $nombres),
             ]);
         } catch (\Throwable $e) {
@@ -355,6 +357,62 @@ class TableroController extends Controller
             $out[] = ['empresa' => (int) $une, 'nombre' => $nombres[(int) $une] ?? ('Empresa ' . (int) $une), 'total' => (int) $total];
         }
         usort($out, fn ($a, $b) => $b['total'] <=> $a['total']);
+        return $out;
+    }
+
+    // ── Ocupación por NAVE (distribución física del stock) ───────────
+    // STOCK.STA_DEP → DEPOSITOS.DEP_COD → naves.NAV_DES. El stock sin depósito
+    // mapeado (STA_DEP vacío o inexistente) cae en "(Sin ubicar)". Trae `porEmpresa`
+    // para la barra apilada por cliente.
+    private function ocupacionNave(int $emp, array $nombres): array
+    {
+        $con = DB::connection(self::CONEXION);
+        $etq = "ISNULL(NULLIF(LTRIM(RTRIM(n.NAV_DES)), ''), '(Sin ubicar)')";
+        $q = $con->table('STOCK as s')
+            ->leftJoin('DEPOSITOS as d', DB::raw('LTRIM(RTRIM(UPPER(s.STA_DEP)))'), '=', DB::raw('LTRIM(RTRIM(UPPER(d.DEP_COD)))'))
+            ->leftJoin('naves as n', 'd.DEP_NAV', '=', 'n.NAV_COD');
+        if ($emp > 0) $q->where('s.STA_UNE', $emp);
+        $rows = $q->selectRaw("{$etq} as nave, s.STA_UNE as une, COUNT(*) as pos, SUM(s.STA_STP) as un")
+            ->groupByRaw("{$etq}, s.STA_UNE")->get();
+
+        $byNave = [];
+        foreach ($rows as $r) {
+            $nave = trim((string) $r->nave);
+            $byNave[$nave] ??= ['nave' => $nave, 'posiciones' => 0, 'unidades' => 0.0, 'emp' => []];
+            $byNave[$nave]['posiciones'] += (int) $r->pos;
+            $byNave[$nave]['unidades'] += (float) $r->un;
+            $byNave[$nave]['emp'][(int) $r->une] = ($byNave[$nave]['emp'][(int) $r->une] ?? 0) + (int) $r->pos;
+        }
+        $out = [];
+        foreach ($byNave as $n) {
+            $out[] = ['nave' => $n['nave'], 'posiciones' => $n['posiciones'], 'unidades' => round($n['unidades'], 2), 'porEmpresa' => $this->porEmpresaDelMes($n['emp'], $nombres)];
+        }
+        usort($out, fn ($a, $b) => $b['posiciones'] <=> $a['posiciones']);
+        return $out;
+    }
+
+    // ── Antigüedad del stock (días desde el ingreso, STA_FEC) ─────────
+    private function antiguedadStock(int $emp): array
+    {
+        $q = DB::connection(self::CONEXION)->table('STOCK');
+        if ($emp > 0) $q->where('STA_UNE', $emp);
+        $hoy = \Carbon\Carbon::today();
+        $orden = ['0 a 30 días', '31 a 90 días', '91 a 180 días', 'Más de 180 días', 'Sin fecha'];
+        $acc = array_fill_keys($orden, ['pos' => 0, 'un' => 0.0]);
+        foreach ($q->get(['STA_FEC', 'STA_STP']) as $s) {
+            $f = $this->fecha($s->STA_FEC);
+            if (!$f) $key = 'Sin fecha';
+            else {
+                $dias = (int) $f->diffInDays($hoy);
+                $key = $dias <= 30 ? '0 a 30 días' : ($dias <= 90 ? '31 a 90 días' : ($dias <= 180 ? '91 a 180 días' : 'Más de 180 días'));
+            }
+            $acc[$key]['pos']++;
+            $acc[$key]['un'] += (float) $s->STA_STP;
+        }
+        $out = [];
+        foreach ($orden as $rango) {
+            if ($acc[$rango]['pos'] > 0) $out[] = ['rango' => $rango, 'posiciones' => $acc[$rango]['pos'], 'unidades' => round($acc[$rango]['un'], 2)];
+        }
         return $out;
     }
 
