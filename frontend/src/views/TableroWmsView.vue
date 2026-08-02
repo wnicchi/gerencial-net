@@ -1,5 +1,11 @@
 <template>
   <div class="wms">
+    <!-- Encabezado que aparece SOLO al imprimir -->
+    <div class="print-encabezado">
+      <h2>Tablero Gerencial · Stock / Logística (WMS)</h2>
+      <p v-if="data">{{ data.empresaNombre }} · Período {{ fmtFecha(fecha1) }} al {{ fmtFecha(fecha2) }} · Impreso el {{ fechaHoy }}</p>
+    </div>
+
     <!-- ── Barra de filtros ── -->
     <div class="filtros">
       <div class="f-grupo">
@@ -22,6 +28,7 @@
       <button class="btn-refresh" @click="cargar" :disabled="cargando">
         {{ cargando ? 'Cargando…' : '↻ Actualizar' }}
       </button>
+      <button class="btn-print" @click="imprimir" :disabled="!data || cargando" title="Imprimir lo que se está viendo">🖨️ Imprimir</button>
       <span class="alcance" v-if="data">{{ data.empresaNombre }}</span>
     </div>
 
@@ -328,6 +335,15 @@ async function cargar () {
   } finally { cargando.value = false }
 }
 
+// ── Imprimir lo que se está viendo ──
+const fechaHoy = new Date().toLocaleDateString('es-AR')
+function imprimir () {
+  document.body.classList.add('imprimiendo-wms')
+  const limpiar = () => { document.body.classList.remove('imprimiendo-wms'); window.removeEventListener('afterprint', limpiar) }
+  window.addEventListener('afterprint', limpiar)
+  window.print()
+}
+
 onMounted(async () => { await cargarEmpresas(); await cargar() })
 </script>
 
@@ -343,7 +359,24 @@ onMounted(async () => { await cargarEmpresas(); await cargar() })
 .btn-refresh { padding: 0.45rem 0.9rem; background: #1b4332; color: #fff; border: none; border-radius: 7px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
 .btn-refresh:hover { background: #14532d; }
 .btn-refresh:disabled { opacity: 0.6; cursor: default; }
+.btn-print { padding: 0.45rem 0.9rem; background: #fff; color: #1b4332; border: 1px solid #1b4332; border-radius: 7px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+.btn-print:hover { background: #f0faf4; }
+.btn-print:disabled { opacity: 0.5; cursor: default; }
 .alcance { margin-left: auto; font-size: 0.85rem; color: #1b4332; font-weight: 700; background: #f0faf4; border: 1px solid #c3e6cb; border-radius: 20px; padding: 0.3rem 0.8rem; }
+
+/* Encabezado de impresión: oculto en pantalla, visible al imprimir */
+.print-encabezado { display: none; }
+
+@media print {
+  .filtros, .msg-error, .cargando { display: none !important; }
+  .print-encabezado { display: block; margin-bottom: 0.9rem; }
+  .print-encabezado h2 { margin: 0 0 0.2rem; color: #1b4332; font-size: 1.3rem; }
+  .print-encabezado p { margin: 0; color: #475569; font-size: 0.9rem; }
+  .wms { padding: 0; }
+  .card, .kpi, .alertas, section { page-break-inside: avoid; break-inside: avoid; }
+  .alerta-col ul { max-height: none !important; overflow: visible !important; }
+  .kpi, .card { box-shadow: none !important; }
+}
 
 .msg-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 0.7rem 1rem; border-radius: 8px; margin-bottom: 1rem; }
 .cargando { color: #64748b; padding: 2rem; text-align: center; }
@@ -404,4 +437,21 @@ onMounted(async () => { await cargarEmpresas(); await cargar() })
 .a-fec.pv { color: #b45309; font-weight: 600; }
 
 @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+</style>
+
+<!-- Reglas GLOBALES de impresión: ocultan el menú y la topbar del layout, para
+     que al imprimir el tablero salga solo el contenido. Solo actúan cuando el
+     botón agrega la clase 'imprimiendo-wms' al body y se está imprimiendo. -->
+<style>
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  body.imprimiendo-wms .sidebar-dos-paneles,
+  body.imprimiendo-wms .topbar { display: none !important; }
+  body.imprimiendo-wms .content-area,
+  body.imprimiendo-wms .main-content { overflow: visible !important; height: auto !important; background: #fff !important; }
+  body.imprimiendo-wms, body.imprimiendo-wms * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
 </style>
