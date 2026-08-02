@@ -78,6 +78,7 @@ class TableroController extends Controller
                 'stockPorEstado' => $this->stockPorEstado($emp),
                 'movimientos'    => $this->movimientosPorMes($emp, $f1, $f2, $meses, $nombres),
                 'operacion'      => $this->operacionPorMes($emp, $f1, $f2, $meses, $nombres),
+                'operacionSemanal' => $this->operacionSemanal($emp, $f1, $f2, $nombres),
                 'alertas'        => $this->alertasOperativas($emp, $nombres),
             ]);
         } catch (\Throwable $e) {
@@ -231,6 +232,77 @@ class TableroController extends Controller
             ];
         }
         return $out;
+    }
+
+    // ── Operación por SEMANA (recepciones y despachos en el tiempo) ──
+    // Cada semana lleva los totales globales + `porEmpresa` (operación total = rec+desp),
+    // para el gráfico de línea (modo Total o Por empresas). Respeta el filtro `empresa`.
+    private function operacionSemanal(int $emp, \Carbon\Carbon $f1, \Carbon\Carbon $f2, array $nombres): array
+    {
+        $con = DB::connection(self::CONEXION);
+        $rango = [$f1->format('Y-m-d'), $f2->format('Y-m-d')];
+        $semanas = $this->rangoSemanas($f1, $f2);
+
+        $rec = []; $desp = []; $recEmp = []; $despEmp = [];
+
+        // Recepciones (RECEPCION.REC_UNE) → una por recepción.
+        $qr = $con->table('RECEPCION')->whereRaw('CAST(REC_FEC AS DATE) BETWEEN ? AND ?', $rango);
+        if ($emp > 0) $qr->where('REC_UNE', $emp);
+        foreach ($qr->get(['REC_FEC', 'REC_UNE']) as $r) {
+            $wk = $this->semanaKey($r->REC_FEC);
+            if (!isset($semanas[$wk])) continue;
+            $rec[$wk] = ($rec[$wk] ?? 0) + 1;
+            $u = (int) $r->REC_UNE; $recEmp[$wk][$u] = ($recEmp[$wk][$u] ?? 0) + 1;
+        }
+
+        // Despachos (distinct DES_NRO; empresa en DESPA_ITEM.DEI_UNE).
+        $desWk = [];
+        foreach ($con->table('DESPACHO')->whereRaw('CAST(DES_FEC AS DATE) BETWEEN ? AND ?', $rango)->get(['DES_NRO', 'DES_FEC']) as $de) {
+            $wk = $this->semanaKey($de->DES_FEC);
+            if (isset($semanas[$wk])) $desWk[(int) $de->DES_NRO] = $wk;
+        }
+        if ($desWk) {
+            $qi = $con->table('DESPA_ITEM')->whereIn('DEI_NRO', array_keys($desWk));
+            if ($emp > 0) $qi->where('DEI_UNE', $emp);
+            $empByDes = [];
+            foreach ($qi->get(['DEI_NRO', 'DEI_UNE']) as $it) $empByDes[(int) $it->DEI_NRO][(int) $it->DEI_UNE] = true;
+            foreach ($desWk as $nro => $wk) {
+                $emps = array_keys($empByDes[$nro] ?? []);
+                if ($emp > 0 && !in_array($emp, $emps, true)) continue;   // despacho ajeno a la empresa filtrada
+                $desp[$wk] = ($desp[$wk] ?? 0) + 1;
+                foreach ($emps as $u) $despEmp[$wk][$u] = ($despEmp[$wk][$u] ?? 0) + 1;
+            }
+        }
+
+        $out = [];
+        foreach ($semanas as $wk => $label) {
+            $comb = $recEmp[$wk] ?? [];
+            foreach (($despEmp[$wk] ?? []) as $u => $n) $comb[$u] = ($comb[$u] ?? 0) + $n;
+            $out[] = [
+                'semana'      => $wk, 'label' => $label,
+                'recepciones' => $rec[$wk] ?? 0,
+                'despachos'   => $desp[$wk] ?? 0,
+                'porEmpresa'  => $this->porEmpresaDelMes($comb, $nombres),
+            ];
+        }
+        return $out;
+    }
+
+    /** Semanas del período (lunes) → ['YYYY-MM-DD' (lunes) => 'dd/mm']. */
+    private function rangoSemanas(\Carbon\Carbon $f1, \Carbon\Carbon $f2): array
+    {
+        $out = [];
+        for ($w = $f1->copy()->startOfWeek(\Carbon\CarbonInterface::MONDAY); $w->lte($f2); $w->addWeek()) {
+            $out[$w->format('Y-m-d')] = $w->format('d/m');
+        }
+        return $out;
+    }
+
+    /** Lunes (clave de semana) de una fecha. */
+    private function semanaKey($fecha): string
+    {
+        try { return \Carbon\Carbon::parse(substr((string) $fecha, 0, 10))->startOfWeek(\Carbon\CarbonInterface::MONDAY)->format('Y-m-d'); }
+        catch (\Throwable) { return ''; }
     }
 
     /** Indexa filas {anio,mes,une,n} en [claveMes => [une => total]]. */

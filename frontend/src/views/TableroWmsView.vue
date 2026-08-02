@@ -90,6 +90,42 @@
           </div>
         </section>
 
+        <!-- ── Torta: salud del inventario por estado ── -->
+        <section class="card">
+          <h3>🩺 Salud del inventario (por estado) <small>(posiciones)</small></h3>
+          <div v-if="!tortaEstado.length" class="vacio">Sin datos.</div>
+          <div v-else class="torta-wrap">
+            <svg viewBox="0 0 180 180" class="torta-svg">
+              <path v-for="(s, i) in tortaEstado" :key="i" :d="s.d" :fill="s.color" stroke="#fff" stroke-width="1.5">
+                <title>{{ s.nombre }}: {{ nf(s.pos) }} pos ({{ s.pct.toFixed(1) }}%)</title>
+              </path>
+              <text v-for="(s, i) in tortaEstadoLabels" :key="'e' + i" :x="s.lx" :y="s.ly" text-anchor="middle" dominant-baseline="middle" class="torta-lbl">{{ s.pct.toFixed(0) }}%</text>
+            </svg>
+            <div class="torta-leg">
+              <div v-for="(s, i) in tortaEstado" :key="i" class="torta-leg-item">
+                <span class="torta-dot" :style="{ background: s.color }"></span>
+                <span class="torta-nom" :title="s.nombre">{{ s.nombre }}</span>
+                <span class="torta-val">{{ s.pct.toFixed(1) }}% · {{ nf(s.pos) }}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Ranking: empresas que más mueven (recepciones + despachos) ── -->
+        <section class="card">
+          <h3>🚚 Empresas que más mueven <small>(recepciones + despachos)</small></h3>
+          <div v-if="!actividadPorEmpresa.length" class="vacio">Sin operación en el período.</div>
+          <div v-else class="hbars">
+            <div v-for="e in actividadPorEmpresa" :key="e.empresa" class="hbar-row">
+              <span class="hbar-lbl" :title="e.nombre">{{ e.nombre }}</span>
+              <div class="hbar-track">
+                <div class="hbar-fill" :style="{ width: pct(e.total, maxActividad) + '%', background: colorEmpresa(e.empresa) }"></div>
+              </div>
+              <span class="hbar-val">{{ nf(e.total) }}</span>
+            </div>
+          </div>
+        </section>
+
         <!-- ── Movimientos por mes ── -->
         <section class="card wide">
           <div class="card-head">
@@ -162,6 +198,31 @@
               </g>
             </svg>
           </template>
+        </section>
+
+        <!-- ── Línea: recepciones y despachos por semana ── -->
+        <section class="card wide">
+          <div class="card-head">
+            <h3>📉 Recepciones y despachos por semana
+              <small>{{ modoSemanal === 'total' ? '(recep. vs desp.)' : '(operación total por empresa)' }}</small>
+            </h3>
+            <div class="toggle">
+              <button :class="{ on: modoSemanal === 'total' }" @click="modoSemanal = 'total'">Total</button>
+              <button :class="{ on: modoSemanal === 'empresas' }" @click="modoSemanal = 'empresas'">Por empresas</button>
+            </div>
+          </div>
+          <div class="ley-empresas">
+            <span v-for="s in linea.built" :key="s.nombre" class="ley-item"><span class="ley-dot" :style="{ background: s.color }"></span>{{ s.nombre }}</span>
+          </div>
+          <div v-if="sinSemanal" class="vacio">Sin recepciones ni despachos en el período.</div>
+          <svg v-else :viewBox="`0 0 ${WW} ${LH}`" class="chart">
+            <line :x1="linea.padL" :y1="linea.baseY" :x2="WW - 12" :y2="linea.baseY" stroke="#e2e8f0" stroke-width="1" />
+            <polyline v-for="s in linea.built" :key="s.nombre" :points="s.puntos" fill="none" :stroke="s.color" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+            <g v-for="s in linea.built" :key="'d' + s.nombre">
+              <circle v-for="(d, i) in s.dots" :key="i" :cx="d.cx" :cy="d.cy" r="2.4" :fill="s.color"><title>{{ s.nombre }} · {{ nf(d.v) }}</title></circle>
+            </g>
+            <text v-for="(l, i) in linea.labels" v-show="l.show" :key="i" :x="l.x" :y="LH - 12" text-anchor="middle" class="ax-x">{{ l.label }}</text>
+          </svg>
         </section>
       </div>
 
@@ -266,7 +327,7 @@ const cargando = ref(false)
 const error = ref('')
 
 // ── Geometría de gráficos ──
-const W = 360, WW = 720, H = 220
+const W = 360, WW = 720, H = 220, LH = 240
 const estadoColores: Record<number, string> = { 1: C.c3, 2: C.c4, 3: C.c2, 4: C.c8, 5: '#94a3b8' }
 const estadoColor = (tip: number) => estadoColores[tip] ?? '#94a3b8'
 
@@ -355,29 +416,83 @@ function stacked (rows: any[]) {
 const stackedMov  = computed(() => stacked(data.value?.movimientos ?? []))
 const stackedOper = computed(() => stacked(data.value?.operacion ?? []))
 
-// ── Torta: participación de cada empresa/cliente en el stock (posiciones) ──
-const torta = computed(() => {
-  const items = (data.value?.stockPorEmpresa ?? []).filter((e: any) => e.posiciones > 0)
-  const total = items.reduce((s: number, e: any) => s + e.posiciones, 0)
+// ── Tortas (participación por empresa + salud del inventario por estado) ──
+function pieSlices (items: any[], getVal: (x: any) => number, getColor: (x: any) => string, getNombre: (x: any) => string) {
+  const arr = items.filter((e) => getVal(e) > 0)
+  const total = arr.reduce((s, e) => s + getVal(e), 0)
   if (total <= 0) return []
   const cx = 90, cy = 90, R = 82
   let ang = -Math.PI / 2   // arranca arriba
-  return items.map((e: any) => {
-    const frac = e.posiciones / total
+  return arr.map((e) => {
+    const val = getVal(e)
+    const frac = val / total
     const a0 = ang, a1 = ang + frac * 2 * Math.PI
     ang = a1
     const mid = (a0 + a1) / 2
     const p = (r: number, a: number) => [(cx + r * Math.cos(a)).toFixed(2), (cy + r * Math.sin(a)).toFixed(2)]
     const [x0, y0] = p(R, a0); const [x1, y1] = p(R, a1); const [lx, ly] = p(R * 0.6, mid)
     const large = (a1 - a0) > Math.PI ? 1 : 0
-    // Una sola empresa (100%) → círculo completo.
+    // Un solo grupo (100%) → círculo completo.
     const d = frac >= 0.999
       ? `M ${cx - R} ${cy} A ${R} ${R} 0 1 1 ${cx + R} ${cy} A ${R} ${R} 0 1 1 ${cx - R} ${cy} Z`
       : `M ${cx} ${cy} L ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1} Z`
-    return { d, color: colorEmpresa(e.empresa), nombre: e.nombre, pos: e.posiciones, pct: frac * 100, lx, ly, mostrar: frac >= 0.05 }
+    return { d, color: getColor(e), nombre: getNombre(e), pos: val, pct: frac * 100, lx, ly, mostrar: frac >= 0.05 }
   })
-})
+}
+const torta = computed(() => pieSlices(data.value?.stockPorEmpresa ?? [], (e) => e.posiciones, (e) => colorEmpresa(e.empresa), (e) => e.nombre))
 const tortaLabels = computed(() => torta.value.filter((s: any) => s.mostrar))
+const tortaEstado = computed(() => pieSlices(data.value?.stockPorEstado ?? [], (e) => e.posiciones, (e) => estadoColor(e.tip), (e) => e.estado))
+const tortaEstadoLabels = computed(() => tortaEstado.value.filter((s: any) => s.mostrar))
+
+// ── Ranking de empresas por actividad (recepciones + despachos del período) ──
+const actividadPorEmpresa = computed(() => {
+  const map = new Map<number, { empresa: number; nombre: string; total: number }>()
+  for (const m of (data.value?.operacion ?? [])) {
+    for (const e of m.porEmpresa) {
+      const cur = map.get(e.empresa) ?? { empresa: e.empresa, nombre: e.nombre, total: 0 }
+      cur.total += e.total
+      map.set(e.empresa, cur)
+    }
+  }
+  return [...map.values()].sort((a, b) => b.total - a.total)
+})
+const maxActividad = computed(() => Math.max(1, ...actividadPorEmpresa.value.map((e) => e.total)))
+
+// ── Gráfico de línea: recepciones/despachos por semana (Total o Por empresas) ──
+const modoSemanal = ref<'total' | 'empresas'>('total')
+const sinSemanal = computed(() => (data.value?.operacionSemanal ?? []).every((r: any) => !r.recepciones && !r.despachos))
+const linea = computed(() => {
+  const rows = data.value?.operacionSemanal ?? []
+  const n = rows.length
+  const padL = 34, padR = 12, padT = 16, padB = 34
+  const plotW = WW - padL - padR, plotH = LH - padT - padB
+  const X = (i: number) => padL + (n <= 1 ? plotW / 2 : (i / (n - 1)) * plotW)
+
+  let series: { nombre: string; color: string; vals: number[] }[]
+  if (modoSemanal.value === 'total') {
+    series = [
+      { nombre: 'Recepciones', color: C.c1, vals: rows.map((r: any) => r.recepciones) },
+      { nombre: 'Despachos', color: C.c2, vals: rows.map((r: any) => r.despachos) },
+    ]
+  } else {
+    const emp = new Map<number, string>()
+    for (const r of rows) for (const e of r.porEmpresa) if (!emp.has(e.empresa)) emp.set(e.empresa, e.nombre)
+    series = [...emp.entries()].map(([cod, nombre]) => ({
+      nombre, color: colorEmpresa(cod),
+      vals: rows.map((r: any) => (r.porEmpresa.find((e: any) => e.empresa === cod)?.total ?? 0)),
+    }))
+  }
+  const max = Math.max(1, ...series.flatMap(s => s.vals))
+  const Y = (v: number) => padT + plotH - (v / max) * plotH
+  const built = series.map(s => ({
+    nombre: s.nombre, color: s.color,
+    puntos: s.vals.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' '),
+    dots: s.vals.map((v, i) => ({ cx: +X(i).toFixed(1), cy: +Y(v).toFixed(1), v })),
+  }))
+  const paso = Math.max(1, Math.ceil(n / 10))
+  const labels = rows.map((r: any, i: number) => ({ x: X(i), label: r.label, show: i % paso === 0 || i === n - 1 }))
+  return { built, labels, baseY: padT + plotH, padL }
+})
 
 async function cargarEmpresas () {
   try { empresas.value = (await api.get('/tablero/wms/empresas')).data } catch { /* sigue global */ }
@@ -498,6 +613,8 @@ async function imprimirPDF () {
       data.value.stockPorEmpresa.map((e: any) => [e.nombre, nf(e.posiciones), nf(e.unidades)]), [110, 38, 38])
     tabla('Stock por estado', ['Estado', 'Posiciones', 'Unidades'],
       data.value.stockPorEstado.map((e: any) => [e.estado, nf(e.posiciones), nf(e.unidades)]), [110, 38, 38])
+    tabla('Empresas que más mueven (Recep. + Desp.)', ['Empresa', 'Movimientos'],
+      actividadPorEmpresa.value.map((e: any) => [e.nombre, nf(e.total)]), [130, 50])
     tabla('Alertas — Productos vencidos', ['Empresa', 'P.N.', 'Descripción', 'Vence', 'Unid.'],
       data.value.alertas.vencidos.map((v: any) => [v.empresa, v.pn, v.des, fmtFecha(v.vence), nf(v.unidades)]), [42, 26, 62, 26, 20])
     tabla('Alertas — Próximos a vencer', ['Empresa', 'P.N.', 'Descripción', 'Vence', 'Unid.'],
