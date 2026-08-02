@@ -339,10 +339,18 @@
             <div v-if="drillCargando" class="cargando">Cargando…</div>
             <table v-else class="drill-tabla">
               <thead>
-                <tr><th>Empresa</th><th>P.N.</th><th>Descripción</th><th class="r">Unidades</th><th class="r">Posic.</th><th>Ingreso + viejo</th><th class="r">Días</th></tr>
+                <tr>
+                  <th class="th-sort" @click="ordenar('empresa')">Empresa{{ flecha('empresa') }}</th>
+                  <th class="th-sort" @click="ordenar('pn')">P.N.{{ flecha('pn') }}</th>
+                  <th class="th-sort" @click="ordenar('des')">Descripción{{ flecha('des') }}</th>
+                  <th class="th-sort r" @click="ordenar('unidades')">Unidades{{ flecha('unidades') }}</th>
+                  <th class="th-sort r" @click="ordenar('posiciones')">Posic.{{ flecha('posiciones') }}</th>
+                  <th class="th-sort" @click="ordenar('fecha')">Ingreso + viejo{{ flecha('fecha') }}</th>
+                  <th class="th-sort r" @click="ordenar('dias')">Días{{ flecha('dias') }}</th>
+                </tr>
               </thead>
               <tbody>
-                <tr v-for="(r, i) in drillRows" :key="i">
+                <tr v-for="(r, i) in drillRowsSorted" :key="i">
                   <td>{{ r.empresa }}</td>
                   <td>{{ r.pn }}</td>
                   <td>{{ r.des }}</td>
@@ -537,8 +545,30 @@ const colorAntiguedad = (r: string) => ANTIG_COLOR[r] ?? '#94a3b8'
 const drillRango = ref(''); const drillRows = ref<any[]>([]); const drillTotal = ref(0); const drillCargando = ref(false)
 const drillOpen = computed(() => drillRango.value !== '')
 const cerrarDrill = () => { drillRango.value = ''; drillRows.value = [] }
+
+// Orden de la tabla del modal. Por defecto: fecha de ingreso más vieja → más nueva.
+const NUMERICAS = new Set(['unidades', 'posiciones', 'dias'])
+const sortKey = ref('fecha'); const sortDir = ref<'asc' | 'desc'>('asc')
+function ordenar (key: string) {
+  if (sortKey.value === key) sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  else { sortKey.value = key; sortDir.value = NUMERICAS.has(key) ? 'desc' : 'asc' }
+}
+const flecha = (key: string) => sortKey.value === key ? (sortDir.value === 'asc' ? ' ▲' : ' ▼') : ''
+const drillRowsSorted = computed(() => {
+  const rows = [...drillRows.value]
+  const k = sortKey.value, dir = sortDir.value === 'asc' ? 1 : -1
+  rows.sort((a, b) => {
+    let av = a[k], bv = b[k]
+    if (k === 'dias') { av = av ?? -1; bv = bv ?? -1 }
+    if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir
+    return String(av ?? '').localeCompare(String(bv ?? ''), 'es', { numeric: true }) * dir
+  })
+  return rows
+})
+
 async function abrirAntiguedad (rango: string) {
   drillRango.value = rango; drillRows.value = []; drillTotal.value = 0; drillCargando.value = true
+  sortKey.value = 'fecha'; sortDir.value = 'asc'   // default: más viejo primero
   try {
     const { data: d } = await api.get('/tablero/wms/antiguedad-detalle', { params: { rango, empresa: empresa.value } })
     drillRows.value = d.rows; drillTotal.value = d.total
@@ -757,6 +787,8 @@ onMounted(async () => { await cargarEmpresas(); await cargar() })
 .drill-body { flex: 1; overflow: auto; background: #fff; }
 .drill-tabla { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
 .drill-tabla th { position: sticky; top: 0; background: #f0faf4; color: #1b4332; text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid #c3e6cb; font-weight: 700; white-space: nowrap; }
+.drill-tabla th.th-sort { cursor: pointer; user-select: none; }
+.drill-tabla th.th-sort:hover { background: #e2f5ea; }
 .drill-tabla td { padding: 0.4rem 0.7rem; border-bottom: 1px solid #eef2f7; color: #334155; }
 .drill-tabla tr:hover td { background: #f8fafc; }
 .drill-tabla .r { text-align: right; }
