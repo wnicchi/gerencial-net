@@ -1,11 +1,5 @@
 <template>
   <div class="wms">
-    <!-- Encabezado que aparece SOLO al imprimir -->
-    <div class="print-encabezado">
-      <h2>Tablero Gerencial · Stock / Logística (WMS)</h2>
-      <p v-if="data">{{ data.empresaNombre }} · Período {{ fmtFecha(fecha1) }} al {{ fmtFecha(fecha2) }} · Impreso el {{ fechaHoy }}</p>
-    </div>
-
     <!-- ── Barra de filtros ── -->
     <div class="filtros">
       <div class="f-grupo">
@@ -28,7 +22,7 @@
       <button class="btn-refresh" @click="cargar" :disabled="cargando">
         {{ cargando ? 'Cargando…' : '↻ Actualizar' }}
       </button>
-      <button class="btn-print" @click="imprimir" :disabled="!data || cargando" title="Imprimir lo que se está viendo">🖨️ Imprimir</button>
+      <button class="btn-print" @click="imprimirPDF" :disabled="!data || cargando || generandoPdf" title="Ver PDF (previsualizar, descargar o imprimir)">{{ generandoPdf ? '⟳…' : '🖨 Imprimir PDF' }}</button>
       <span class="alcance" v-if="data">{{ data.empresaNombre }}</span>
     </div>
 
@@ -197,12 +191,30 @@
     </template>
 
     <div v-else-if="cargando" class="cargando">Cargando datos de Stock/Logística…</div>
+
+    <!-- Visor del PDF (previsualizar → descargar / imprimir) -->
+    <Teleport to="body">
+      <div v-if="pdfUrl" class="es-pdf-ov" @click.self="cerrarPdf">
+        <div class="es-pdf-md">
+          <div class="es-pdf-head"><span>{{ pdfNombre }}</span>
+            <div class="es-pdf-acc">
+              <button class="es-pdf-b ok" @click="guardarDesdeUrl(pdfUrl, pdfNombre)">⬇ Descargar</button>
+              <button class="es-pdf-b ok" @click="($refs.pf as HTMLIFrameElement)?.contentWindow?.print()">🖨 Imprimir</button>
+              <button class="es-pdf-b cancel" @click="cerrarPdf">✕ Cerrar</button>
+            </div>
+          </div>
+          <iframe ref="pf" :src="pdfUrl" class="es-pdf-frame"></iframe>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, h } from 'vue'
+import { ref, computed, onMounted, nextTick, h } from 'vue'
 import api from '@/services/auth'
+import jsPDF from 'jspdf'
+import { guardarDesdeUrl } from '@/utils/descargas'
 
 // Paleta categórica validada (skill dataviz).
 const C = { c1: '#2a78d6', c2: '#eb6834', c3: '#1baf7a', c4: '#eda100', c8: '#e34948' }
@@ -335,13 +347,120 @@ async function cargar () {
   } finally { cargando.value = false }
 }
 
-// ── Imprimir lo que se está viendo ──
+// ── Imprimir PDF (previsualizar en modal → descargar / imprimir) ──
 const fechaHoy = new Date().toLocaleDateString('es-AR')
-function imprimir () {
-  document.body.classList.add('imprimiendo-wms')
-  const limpiar = () => { document.body.classList.remove('imprimiendo-wms'); window.removeEventListener('afterprint', limpiar) }
-  window.addEventListener('afterprint', limpiar)
-  window.print()
+const generandoPdf = ref(false)
+const pdfUrl = ref(''); const pdfNombre = ref('')
+const cerrarPdf = () => { if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value); pdfUrl.value = '' }
+
+// Quita emojis (la fuente del PDF no los dibuja).
+const sinEmoji = (s: string) => s.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu, '').trim()
+
+// Estilos embebidos al rasterizar el SVG (el CSS scoped no viaja). Los rellenos de
+// las barras son atributos `fill` inline, así que solo hace falta el estilo de los textos.
+const SVG_CSS = `
+  text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
+  .ax-x{fill:#64748b;font-size:9px}.ax-v{fill:#475569;font-size:9px;font-weight:600}
+`
+function svgAPng (svg: SVGSVGElement, escala = 2): Promise<{ url: string; w: number; h: number }> {
+  const vb = (svg.getAttribute('viewBox') || '0 0 720 220').split(/\s+/).map(Number)
+  const w = vb[2] || 720, h = vb[3] || 220
+  const clon = svg.cloneNode(true) as SVGSVGElement
+  clon.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+  clon.setAttribute('width', String(w)); clon.setAttribute('height', String(h))
+  const st = document.createElementNS('http://www.w3.org/2000/svg', 'style'); st.textContent = SVG_CSS
+  clon.insertBefore(st, clon.firstChild)
+  const xml = new XMLSerializer().serializeToString(clon)
+  const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml)
+  return new Promise((res) => {
+    const img = new Image()
+    img.onload = () => {
+      const cv = document.createElement('canvas'); cv.width = w * escala; cv.height = h * escala
+      const ctx = cv.getContext('2d')!; ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height)
+      ctx.drawImage(img, 0, 0, cv.width, cv.height)
+      res({ url: cv.toDataURL('image/png'), w, h })
+    }
+    img.onerror = () => res({ url: '', w, h })
+    img.src = url
+  })
+}
+
+async function imprimirPDF () {
+  if (!data.value) return
+  generandoPdf.value = true
+  try {
+    await nextTick()
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const PW = 210, PH = 297, ML = 12, W = PW - ML * 2
+    let y = 16
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(27, 67, 50)
+    doc.text('Tablero Gerencial — Stock / Logística (WMS)', ML, y); y += 6
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(0, 0, 0)
+    doc.text(`${data.value.empresaNombre}   ·   Período: ${fmtFecha(fecha1.value)} al ${fmtFecha(fecha2.value)}   ·   Impreso: ${fechaHoy}`, ML, y); y += 5
+    doc.setDrawColor(27, 67, 50); doc.setLineWidth(0.4); doc.line(ML, y, PW - ML, y); y += 8
+
+    // KPIs en una fila
+    const k = data.value.kpis
+    const kpis: [string, string][] = [
+      ['Posiciones', nf(k.posiciones)], ['Unidades', nf(k.unidades)], ['Productos', nf(k.productos)],
+      ['Empresas c/stock', nf(k.empresas)], ['Bloqueadas', nf(k.bloqueadas)],
+    ]
+    const kw = W / kpis.length
+    kpis.forEach((kp, i) => {
+      const x = ML + i * kw
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(27, 67, 50); doc.text(kp[1], x, y)
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(100, 116, 139); doc.text(kp[0], x, y + 4)
+    })
+    y += 11
+    doc.setDrawColor(220); doc.setLineWidth(0.2); doc.line(ML, y, PW - ML, y); y += 7
+
+    // Gráficos SVG que estén a la vista (estado, movimientos, operación — en su modo actual)
+    const cards = Array.from(document.querySelectorAll('.wms .grid .card')) as HTMLElement[]
+    for (const card of cards) {
+      const svg = card.querySelector('svg') as SVGSVGElement | null
+      if (!svg) continue   // la tarjeta de "Stock por empresa" (barras HTML) va como tabla
+      const titulo = sinEmoji(card.querySelector('h3')?.textContent || '')
+      const { url, w, h } = await svgAPng(svg)
+      if (!url) continue
+      const imgW = W, imgH = imgW * (h / w)
+      if (y + 8 + imgH > PH - 14) { doc.addPage(); y = 16 }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(30, 41, 59); doc.text(titulo, ML, y); y += 4
+      doc.addImage(url, 'PNG', ML, y, imgW, imgH); y += imgH + 8
+    }
+
+    // Tablas de datos
+    const tabla = (titulo: string, head: string[], rows: (string | number)[][], anchos: number[]) => {
+      if (!rows.length) return
+      if (y > PH - 24) { doc.addPage(); y = 16 }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(27, 67, 50); doc.text(titulo, ML, y); y += 5
+      doc.setFontSize(8); doc.setTextColor(0, 0, 0)
+      const xs: number[] = []; let acc = ML; for (const a of anchos) { xs.push(acc); acc += a }
+      doc.setFont('helvetica', 'bold'); head.forEach((c, i) => doc.text(String(c), xs[i] ?? ML, y)); y += 1.5
+      doc.setDrawColor(180); doc.line(ML, y, PW - ML, y); y += 4
+      doc.setFont('helvetica', 'normal')
+      for (const r of rows) {
+        if (y > PH - 14) { doc.addPage(); y = 16 }
+        r.forEach((c, i) => doc.text(doc.splitTextToSize(String(c ?? ''), (anchos[i] ?? 30) - 2)[0] || '', xs[i] ?? ML, y)); y += 4.4
+      }
+      y += 6
+    }
+    tabla('Stock por empresa', ['Empresa', 'Posiciones', 'Unidades'],
+      data.value.stockPorEmpresa.map((e: any) => [e.nombre, nf(e.posiciones), nf(e.unidades)]), [110, 38, 38])
+    tabla('Stock por estado', ['Estado', 'Posiciones', 'Unidades'],
+      data.value.stockPorEstado.map((e: any) => [e.estado, nf(e.posiciones), nf(e.unidades)]), [110, 38, 38])
+    tabla('Alertas — Productos vencidos', ['Empresa', 'P.N.', 'Descripción', 'Vence', 'Unid.'],
+      data.value.alertas.vencidos.map((v: any) => [v.empresa, v.pn, v.des, fmtFecha(v.vence), nf(v.unidades)]), [42, 26, 62, 26, 20])
+    tabla('Alertas — Próximos a vencer', ['Empresa', 'P.N.', 'Descripción', 'Vence', 'Unid.'],
+      data.value.alertas.porVencer.map((v: any) => [v.empresa, v.pn, v.des, fmtFecha(v.vence), nf(v.unidades)]), [42, 26, 62, 26, 20])
+    tabla('Alertas — Bloqueadas por empresa', ['Empresa', 'Posiciones', 'Unidades'],
+      data.value.alertas.bloqueados.map((b: any) => [b.empresa, nf(b.posiciones), nf(b.unidades)]), [110, 38, 38])
+
+    cerrarPdf()
+    const emp = data.value.empresa ? `EMP${data.value.empresa}` : 'GLOBAL'
+    pdfNombre.value = `TABLERO_WMS_${emp}_${fecha1.value}_${fecha2.value}.pdf`
+    pdfUrl.value = URL.createObjectURL(doc.output('blob'))
+  } catch (e) { console.error(e); error.value = 'No se pudo generar el PDF.' }
+  finally { generandoPdf.value = false }
 }
 
 onMounted(async () => { await cargarEmpresas(); await cargar() })
@@ -364,19 +483,15 @@ onMounted(async () => { await cargarEmpresas(); await cargar() })
 .btn-print:disabled { opacity: 0.5; cursor: default; }
 .alcance { margin-left: auto; font-size: 0.85rem; color: #1b4332; font-weight: 700; background: #f0faf4; border: 1px solid #c3e6cb; border-radius: 20px; padding: 0.3rem 0.8rem; }
 
-/* Encabezado de impresión: oculto en pantalla, visible al imprimir */
-.print-encabezado { display: none; }
-
-@media print {
-  .filtros, .msg-error, .cargando { display: none !important; }
-  .print-encabezado { display: block; margin-bottom: 0.9rem; }
-  .print-encabezado h2 { margin: 0 0 0.2rem; color: #1b4332; font-size: 1.3rem; }
-  .print-encabezado p { margin: 0; color: #475569; font-size: 0.9rem; }
-  .wms { padding: 0; }
-  .card, .kpi, .alertas, section { page-break-inside: avoid; break-inside: avoid; }
-  .alerta-col ul { max-height: none !important; overflow: visible !important; }
-  .kpi, .card { box-shadow: none !important; }
-}
+/* Modal visor del PDF (previsualizar / descargar / imprimir) */
+.es-pdf-ov { position: fixed; inset: 0; background: rgba(15,23,42,.6); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 18px; }
+.es-pdf-md { width: min(1000px, 98vw); height: 92vh; background: #fff; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+.es-pdf-head { display: flex; align-items: center; gap: 14px; padding: 10px 14px; background: #1b4332; color: #fff; font-size: 13px; flex-wrap: wrap; }
+.es-pdf-acc { margin-left: auto; display: flex; gap: 8px; }
+.es-pdf-b { border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; }
+.es-pdf-b.ok { background: #22c55e; color: #fff; }
+.es-pdf-b.cancel { background: #ef4444; color: #fff; }
+.es-pdf-frame { flex: 1; border: none; width: 100%; }
 
 .msg-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 0.7rem 1rem; border-radius: 8px; margin-bottom: 1rem; }
 .cargando { color: #64748b; padding: 2rem; text-align: center; }
@@ -437,21 +552,4 @@ onMounted(async () => { await cargarEmpresas(); await cargar() })
 .a-fec.pv { color: #b45309; font-weight: 600; }
 
 @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
-</style>
-
-<!-- Reglas GLOBALES de impresión: ocultan el menú y la topbar del layout, para
-     que al imprimir el tablero salga solo el contenido. Solo actúan cuando el
-     botón agrega la clase 'imprimiendo-wms' al body y se está imprimiendo. -->
-<style>
-@media print {
-  @page { size: A4 landscape; margin: 10mm; }
-  body.imprimiendo-wms .sidebar-dos-paneles,
-  body.imprimiendo-wms .topbar { display: none !important; }
-  body.imprimiendo-wms .content-area,
-  body.imprimiendo-wms .main-content { overflow: visible !important; height: auto !important; background: #fff !important; }
-  body.imprimiendo-wms, body.imprimiendo-wms * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-}
 </style>
