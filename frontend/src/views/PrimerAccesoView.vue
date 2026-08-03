@@ -64,12 +64,18 @@
           <form @submit.prevent="crearPassword" class="form">
             <div class="form-group">
               <label>Nueva contraseña</label>
-              <input v-model="form.password" type="password" placeholder="••••••••" required />
+              <div class="input-clave">
+                <input v-model="form.password" :type="verClave ? 'text' : 'password'" placeholder="••••••••" required />
+                <button type="button" class="ver-clave" :title="verClave ? 'Ocultar' : 'Mostrar'" @click="verClave = !verClave">{{ verClave ? '🙈' : '👁' }}</button>
+              </div>
               <small class="hint">Mínimo 8 caracteres, mayúscula, número y símbolo.</small>
             </div>
             <div class="form-group">
               <label>Confirmar contraseña</label>
-              <input v-model="form.password_confirmation" type="password" placeholder="••••••••" required />
+              <div class="input-clave">
+                <input v-model="form.password_confirmation" :type="verClave ? 'text' : 'password'" placeholder="••••••••" required />
+                <button type="button" class="ver-clave" :title="verClave ? 'Ocultar' : 'Mostrar'" @click="verClave = !verClave">{{ verClave ? '🙈' : '👁' }}</button>
+              </div>
             </div>
             <div v-if="error" class="alert-error">{{ error }}</div>
             <button type="submit" class="btn-primary" :disabled="cargando">
@@ -105,6 +111,7 @@ const paso          = ref(1)
 const cargando      = ref(false)
 const error         = ref('')
 const nombreUsuario = ref('')
+const verClave      = ref(false)   // ojito: muestra/oculta la contraseña tipeada
 
 const form = ref({
   usuario: '', email: '', codigo: '',
@@ -192,6 +199,14 @@ h1 { font-size: 1.8rem; color: #1e3a5f; margin: 0 0 0.4rem; text-align: center; 
   border-radius: 8px; font-size: 1rem; outline: none; transition: border-color 0.2s;
 }
 .form-group input:focus { border-color: #2d6a9f; }
+.input-clave { position: relative; display: flex; align-items: center; }
+.input-clave input { flex: 1; width: 100%; padding-right: 2.6rem; }
+.ver-clave {
+  position: absolute; right: 0.35rem; top: 50%; transform: translateY(-50%);
+  background: transparent; border: none; cursor: pointer; font-size: 1.05rem;
+  line-height: 1; padding: 0.3rem 0.35rem; border-radius: 6px; opacity: 0.75;
+}
+.ver-clave:hover { background: #f0faf4; opacity: 1; }
 .input-codigo { text-align: center; letter-spacing: 0.5rem; font-size: 1.4rem; font-weight: 700; }
 .hint { color: #888; font-size: 0.8rem; }
 
