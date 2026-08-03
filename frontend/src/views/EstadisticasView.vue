@@ -159,6 +159,58 @@
           <p v-if="!gFaltasEmp.n" class="es-vacio">Sin faltas registradas en el período.</p>
         </div>
 
+        <!-- 9) Antigüedad -->
+        <div class="es-card">
+          <div class="es-card-h"><h3>📅 Antigüedad de la dotación</h3><button class="es-ojo" title="Ver el desglose detallado" @click="abrirDesglose('antiguedad')">👁️</button></div>
+          <svg :viewBox="`0 0 ${W} ${H}`" class="es-svg" @mouseleave="tip = null">
+            <line v-for="t in gAntig.ticks" :key="'ga'+t.v" :x1="PL" :x2="W-PR" :y1="t.y" :y2="t.y" class="grid" />
+            <text v-for="t in gAntig.ticks" :key="'tan'+t.v" :x="PL-6" :y="t.y+3" class="ejeY">{{ t.lbl }}</text>
+            <template v-for="b in gAntig.bars" :key="'ba'+b.i">
+              <rect :x="b.x" :y="b.y" :width="b.w" :height="b.h" rx="3" class="barra c3" @mousemove="ponerTip($event, `${b.label}: ${b.val} empleados`)" />
+              <text :x="b.x + b.w/2" :y="H-PB+14" class="ejeX">{{ b.label }}</text>
+            </template>
+          </svg>
+        </div>
+
+        <!-- 10) Edades -->
+        <div class="es-card">
+          <div class="es-card-h"><h3>🎂 Franjas etarias</h3><button class="es-ojo" title="Ver el desglose detallado" @click="abrirDesglose('edades')">👁️</button></div>
+          <svg :viewBox="`0 0 ${W} ${H}`" class="es-svg" @mouseleave="tip = null">
+            <line v-for="t in gEdades.ticks" :key="'ge'+t.v" :x1="PL" :x2="W-PR" :y1="t.y" :y2="t.y" class="grid" />
+            <text v-for="t in gEdades.ticks" :key="'ted'+t.v" :x="PL-6" :y="t.y+3" class="ejeY">{{ t.lbl }}</text>
+            <template v-for="b in gEdades.bars" :key="'be'+b.i">
+              <rect :x="b.x" :y="b.y" :width="b.w" :height="b.h" rx="3" class="barra c1" @mousemove="ponerTip($event, `${b.label} años: ${b.val} empleados`)" />
+              <text :x="b.x + b.w/2" :y="H-PB+14" class="ejeX">{{ b.label }}</text>
+            </template>
+          </svg>
+        </div>
+
+        <!-- 11) Siniestralidad ART -->
+        <div class="es-card">
+          <div class="es-card-h"><h3>🩹 Siniestralidad ART (días por mes)</h3><button class="es-ojo" title="Ver el desglose detallado" @click="abrirDesglose('siniestralidad')">👁️</button></div>
+          <svg :viewBox="`0 0 ${W} ${H}`" class="es-svg" @mouseleave="tip = null">
+            <line v-for="t in gSini.ticks" :key="'gs'+t.v" :x1="PL" :x2="W-PR" :y1="t.y" :y2="t.y" class="grid" />
+            <text v-for="t in gSini.ticks" :key="'tsi'+t.v" :x="PL-6" :y="t.y+3" class="ejeY">{{ t.lbl }}</text>
+            <template v-for="b in gSini.bars" :key="'bsi'+b.i">
+              <rect :x="b.x" :y="b.y" :width="b.w" :height="b.h" rx="3" class="barra c8" @mousemove="ponerTip($event, `${b.label}: ${b.val} días · ${b.casos} casos`)" />
+              <text :x="b.x + b.w/2" :y="H-PB+14" class="ejeX">{{ b.label }}</text>
+            </template>
+          </svg>
+        </div>
+
+        <!-- 12) % Horas Extras sobre el sueldo -->
+        <div class="es-card">
+          <div class="es-card-h"><h3>📊 Horas extras como % del sueldo</h3><button class="es-ojo" title="Ver el desglose detallado" @click="abrirDesglose('heRatio')">👁️</button></div>
+          <svg :viewBox="`0 0 ${W} ${H}`" class="es-svg" @mouseleave="tip = null">
+            <line v-for="t in gHeRatio.ticks" :key="'gr'+t.v" :x1="PL" :x2="W-PR" :y1="t.y" :y2="t.y" class="grid" />
+            <text v-for="t in gHeRatio.ticks" :key="'tr'+t.v" :x="PL-6" :y="t.y+3" class="ejeY">{{ t.lbl }}</text>
+            <template v-for="b in gHeRatio.bars" :key="'br'+b.i">
+              <rect :x="b.x" :y="b.y" :width="b.w" :height="b.h" rx="3" class="barra c4" @mousemove="ponerTip($event, `${b.label}: ${b.val.toFixed(1)}% del sueldo`)" />
+              <text :x="b.x + b.w/2" :y="H-PB+14" class="ejeX">{{ b.label }}</text>
+            </template>
+          </svg>
+        </div>
+
         <!-- 8) Puntualidad — llegadas tarde (bajo demanda) -->
         <div class="es-card wide">
           <div class="es-card-h">
@@ -261,21 +313,21 @@
           <!-- Nivel 1: desglose del gráfico (filas clickeables) -->
           <template v-if="desg.nivel === 'grupos'">
             <div class="es-det-tools">
-              <span class="es-det-cont">{{ desg.rows.length }} filas · {{ fmtFecha(f.fecha1) }} al {{ fmtFecha(f.fecha2) }} · 👆 tocá una fila para ver el detalle</span>
+              <span class="es-det-cont">{{ desg.rows.length }} filas · {{ fmtFecha(f.fecha1) }} al {{ fmtFecha(f.fecha2) }}<template v-if="desg.drilleable"> · 👆 tocá una fila para ver el detalle</template></span>
               <span style="flex:1"></span>
               <button class="es-exp" :disabled="!desg.rows.length" @click="exportarDesglose">📊 Excel</button>
             </div>
             <div class="es-det-wrap">
               <table class="es-det-tabla">
-                <thead><tr><th v-for="c in desg.cols" :key="c.key" :class="{ r: c.r }">{{ c.label }}</th><th></th></tr></thead>
+                <thead><tr><th v-for="c in desg.cols" :key="c.key" :class="{ r: c.r }">{{ c.label }}</th><th v-if="desg.drilleable"></th></tr></thead>
                 <tbody>
-                  <tr v-if="!desg.rows.length"><td :colspan="desg.cols.length + 1" class="es-det-vacio">Sin datos.</td></tr>
-                  <tr v-for="(r, i) in desg.rows" :key="i" class="es-mes-row" @click="abrirSub(r)">
+                  <tr v-if="!desg.rows.length"><td :colspan="desg.cols.length + (desg.drilleable ? 1 : 0)" class="es-det-vacio">Sin datos.</td></tr>
+                  <tr v-for="(r, i) in desg.rows" :key="i" :class="{ 'es-mes-row': desg.drilleable }" @click="desg.drilleable && abrirSub(r)">
                     <td v-for="c in desg.cols" :key="c.key" :class="{ r: c.r, b: c.money }">{{ celda(r, c) }}</td>
-                    <td class="r"><span class="es-ver-mes">ver ›</span></td>
+                    <td v-if="desg.drilleable" class="r"><span class="es-ver-mes">ver ›</span></td>
                   </tr>
                 </tbody>
-                <tfoot v-if="desg.footer"><tr><td v-for="(cell, j) in desg.footer" :key="j" :class="{ r: desg.cols[j]?.r, b: true }">{{ cell }}</td><td></td></tr></tfoot>
+                <tfoot v-if="desg.footer"><tr><td v-for="(cell, j) in desg.footer" :key="j" :class="{ r: desg.cols[j]?.r, b: true }">{{ cell }}</td><td v-if="desg.drilleable"></td></tr></tfoot>
               </table>
             </div>
           </template>
@@ -506,6 +558,45 @@ const gFaltasEmp = computed(() => {
   return { bars, n: items.length, x0 }
 })
 
+// 9) Antigüedad (dotación activa por tramo de años)
+const gAntig = computed(() => {
+  const d = datos.value?.antiguedad ?? []
+  const max = Math.max(1, ...d.map((x: any) => x.cant))
+  const bw = (W - PL - PR) / Math.max(1, d.length)
+  const bars = d.map((x: any, i: number) => { const h = (x.cant / max) * (H - PB - PT); return { i, x: PL + i * bw + bw * 0.14, w: bw * 0.72, y: H - PB - h, h, val: x.cant, label: x.label } })
+  return { bars, ticks: ticksY(max, (v) => nf0.format(v)) }
+})
+// 10) Edades (dotación activa por franja etaria)
+const gEdades = computed(() => {
+  const d = datos.value?.edades ?? []
+  const max = Math.max(1, ...d.map((x: any) => x.cant))
+  const bw = (W - PL - PR) / Math.max(1, d.length)
+  const bars = d.map((x: any, i: number) => { const h = (x.cant / max) * (H - PB - PT); return { i, x: PL + i * bw + bw * 0.14, w: bw * 0.72, y: H - PB - h, h, val: x.cant, label: x.label } })
+  return { bars, ticks: ticksY(max, (v) => nf0.format(v)) }
+})
+// 11) Siniestralidad ART (días de accidente laboral por mes)
+const gSini = computed(() => {
+  const d = datos.value?.siniestralidad ?? []
+  const max = Math.max(1, ...d.map((x: any) => x.dias))
+  const bw = (W - PL - PR) / Math.max(1, d.length)
+  const bars = d.map((x: any, i: number) => { const h = (x.dias / max) * (H - PB - PT); return { i, x: PL + i * bw + bw * 0.14, w: bw * 0.72, y: H - PB - h, h, val: x.dias, casos: x.casos, label: x.label.slice(0, 3) } })
+  return { bars, ticks: ticksY(max, (v) => nf0.format(v)) }
+})
+// 12) % de Horas Extras sobre el sueldo (costo HE / neto pagado, por mes) — derivado
+const heRatio = computed(() => {
+  const he = datos.value?.horasExtras ?? []
+  const netoDe: Record<string, number> = {}
+  for (const s of (datos.value?.sueldosPorMes ?? [])) netoDe[s.mes] = Number(s.neto || 0)
+  return he.map((x: any) => ({ label: x.label, mes: x.mes, costo: Number(x.costo || 0), neto: netoDe[x.mes] || 0, pct: netoDe[x.mes] ? (Number(x.costo || 0) / netoDe[x.mes] * 100) : 0 }))
+})
+const gHeRatio = computed(() => {
+  const d = heRatio.value
+  const max = Math.max(0.1, ...d.map((x: any) => x.pct))
+  const bw = (W - PL - PR) / Math.max(1, d.length)
+  const bars = d.map((x: any, i: number) => { const h = (x.pct / max) * (H - PB - PT); return { i, x: PL + i * bw + bw * 0.14, w: bw * 0.72, y: H - PB - h, h, val: x.pct, label: x.label.slice(0, 3) } })
+  return { bars, ticks: ticksY(max, (v) => nf1.format(v) + '%') }
+})
+
 // 8) Puntualidad — llegadas tarde (bajo demanda, cálculo pesado)
 const restarDias = (iso: string, n: number) => { const dd = new Date(iso || new Date().toISOString().slice(0, 10)); dd.setDate(dd.getDate() - n); return dd.toISOString().slice(0, 10) }
 const punt = reactive<{ cargando: boolean; cargado: boolean; f1: string; f2: string; top: any[]; conTarde: number; sinTarde: number; evaluados: number; error: string; acotado: boolean; desde: string; hasta: string }>({
@@ -537,8 +628,8 @@ const gPunt = computed(() => {
 
 // ── Desglose genérico (ojito) para el resto de los gráficos ──
 type Col = { key: string; label: string; r?: boolean; money?: boolean }
-const desg = reactive<{ abierto: boolean; icono: string; titulo: string; tipo: string; cols: Col[]; rows: any[]; footer: any[] | null; archivo: string; nivel: 'grupos' | 'sub'; sub: { titulo: string; cols: Col[]; rows: any[]; footer: any[] | null; cargando: boolean; archivo: string } }>({
-  abierto: false, icono: '', titulo: '', tipo: '', cols: [], rows: [], footer: null, archivo: '', nivel: 'grupos',
+const desg = reactive<{ abierto: boolean; icono: string; titulo: string; tipo: string; drilleable: boolean; cols: Col[]; rows: any[]; footer: any[] | null; archivo: string; nivel: 'grupos' | 'sub'; sub: { titulo: string; cols: Col[]; rows: any[]; footer: any[] | null; cargando: boolean; archivo: string } }>({
+  abierto: false, icono: '', titulo: '', tipo: '', drilleable: false, cols: [], rows: [], footer: null, archivo: '', nivel: 'grupos',
   sub: { titulo: '', cols: [], rows: [], footer: null, cargando: false, archivo: '' },
 })
 const LBL_AGRUP: Record<string, string> = { convenio: 'Convenio', sector: 'Sector', categoria: 'Categoría', contratista: 'Contratista', lugar: 'Lugar' }
@@ -607,7 +698,7 @@ function volverGrupos () { desg.nivel = 'grupos' }
 
 function abrirDesglose (tipo: string) {
   const d = datos.value; if (!d) return
-  desg.tipo = tipo; desg.nivel = 'grupos'
+  desg.tipo = tipo; desg.nivel = 'grupos'; desg.drilleable = !!DRILL[tipo]
   if (tipo === 'composicion') {
     const items = (d.composicion?.items ?? [])
     const total = items.reduce((a: number, x: any) => a + Number(x.monto || 0), 0) || 1
@@ -654,6 +745,26 @@ function abrirDesglose (tipo: string) {
     desg.rows = rows
     desg.footer = ['', 'TOTAL', sumBy(rows, 'minutos'), sumBy(rows, 'dias')]
     desg.archivo = 'PUNTUALIDAD'
+  } else if (tipo === 'antiguedad') {
+    const rows = (d.antiguedad ?? [])
+    desg.icono = '📅'; desg.titulo = 'Antigüedad de la dotación'
+    desg.cols = [{ key: 'label', label: 'Tramo (años)' }, { key: 'cant', label: 'Empleados', r: true }]
+    desg.rows = rows; desg.footer = ['TOTAL', sumBy(rows, 'cant')]; desg.archivo = 'ANTIGUEDAD'
+  } else if (tipo === 'edades') {
+    const rows = (d.edades ?? [])
+    desg.icono = '🎂'; desg.titulo = 'Franjas etarias'
+    desg.cols = [{ key: 'label', label: 'Edad (años)' }, { key: 'cant', label: 'Empleados', r: true }]
+    desg.rows = rows; desg.footer = ['TOTAL', sumBy(rows, 'cant')]; desg.archivo = 'EDADES'
+  } else if (tipo === 'siniestralidad') {
+    const rows = (d.siniestralidad ?? [])
+    desg.icono = '🩹'; desg.titulo = 'Siniestralidad ART por mes'
+    desg.cols = [{ key: 'label', label: 'Mes' }, { key: 'dias', label: 'Días', r: true }, { key: 'casos', label: 'Casos', r: true }]
+    desg.rows = rows; desg.footer = ['TOTAL', sumBy(rows, 'dias'), sumBy(rows, 'casos')]; desg.archivo = 'SINIESTRALIDAD_ART'
+  } else if (tipo === 'heRatio') {
+    const rows = heRatio.value.map((x: any) => ({ ...x, pct: x.pct.toFixed(1) + '%' }))
+    desg.icono = '📊'; desg.titulo = 'Horas extras como % del sueldo'
+    desg.cols = [{ key: 'label', label: 'Mes' }, { key: 'costo', label: 'Costo HE', r: true, money: true }, { key: 'neto', label: 'Neto pagado', r: true, money: true }, { key: 'pct', label: '% s/sueldo', r: true }]
+    desg.rows = rows; desg.footer = null; desg.archivo = 'HE_PORCENTAJE'
   } else return
   desg.abierto = true
 }
@@ -852,6 +963,14 @@ async function imprimirPDF () {
       (datos.value.faltasEmpleado?.items ?? []).map((x: any) => [x.legajo, x.nombre, x.dias]), [26, 120, 30])
     tabla('Liquidaciones finales por mes', ['Mes', 'Monto', 'Bajas'],
       (datos.value.liqFinales?.items ?? []).map((x: any) => [x.label, money(x.monto), x.empleados]), [40, 60, 30])
+    tabla('Antigüedad de la dotación', ['Tramo (años)', 'Empleados'],
+      (datos.value.antiguedad ?? []).map((x: any) => [x.label, x.cant]), [60, 40])
+    tabla('Franjas etarias', ['Edad (años)', 'Empleados'],
+      (datos.value.edades ?? []).map((x: any) => [x.label, x.cant]), [60, 40])
+    tabla('Siniestralidad ART por mes', ['Mes', 'Días', 'Casos'],
+      (datos.value.siniestralidad ?? []).map((x: any) => [x.label, x.dias, x.casos]), [40, 40, 40])
+    tabla('Horas extras como % del sueldo', ['Mes', 'Costo HE', 'Neto', '% s/sueldo'],
+      heRatio.value.map((x: any) => [x.label, money(x.costo), money(x.neto), x.pct.toFixed(1) + '%']), [30, 50, 50, 30])
 
     cerrarPdf(); pdfNombre.value = `ESTADISTICAS_${f.fecha1}_${f.fecha2}.pdf`; pdfUrl.value = URL.createObjectURL(doc.output('blob'))
   } catch (e) { console.error(e); msg.value = 'No se pudo generar el PDF.' }
@@ -884,6 +1003,14 @@ async function exportarExcel () {
     (datos.value.faltasEmpleado?.items ?? []).map((x: any) => [x.legajo, x.nombre, x.dias]))
   body += tabla('LIQUIDACIONES FINALES POR MES', ['Mes', 'Monto', 'Bajas'],
     (datos.value.liqFinales?.items ?? []).map((x: any) => [x.label, x.monto, x.empleados]))
+  body += tabla('ANTIGUEDAD DE LA DOTACION', ['Tramo (años)', 'Empleados'],
+    (datos.value.antiguedad ?? []).map((x: any) => [x.label, x.cant]))
+  body += tabla('FRANJAS ETARIAS', ['Edad (años)', 'Empleados'],
+    (datos.value.edades ?? []).map((x: any) => [x.label, x.cant]))
+  body += tabla('SINIESTRALIDAD ART POR MES', ['Mes', 'Días', 'Casos'],
+    (datos.value.siniestralidad ?? []).map((x: any) => [x.label, x.dias, x.casos]))
+  body += tabla('HORAS EXTRAS COMO % DEL SUELDO', ['Mes', 'Costo HE', 'Neto pagado', '% s/sueldo'],
+    heRatio.value.map((x: any) => [x.label, x.costo, x.neto, x.pct.toFixed(1) + '%']))
   const html = '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body><table border="1">' + body + '</table></body></html>'
   await guardarComo(new Blob([html], { type: 'application/vnd.ms-excel' }), `ESTADISTICAS_${f.fecha1}_${f.fecha2}.xls`)
 }

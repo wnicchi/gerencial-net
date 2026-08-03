@@ -70,6 +70,9 @@ class EstadisticaController extends Controller
                 'ausentismo'    => $this->ausentismo($request, $f1, $f2),
                 'faltasEmpleado' => $this->faltasEmpleado($request, $f1, $f2),
                 'liqFinales'    => $this->liqFinalesPorMes($request, $f1, $f2, $meses),
+                'antiguedad'    => $this->antiguedad($request),
+                'edades'        => $this->edades($request),
+                'siniestralidad' => $this->siniestralidad($request, $f1, $f2, $meses),
             ]);
         } catch (\Throwable $e) {
             \App\Support\RegistroError::registrar($e, $request, 'ESTADISTICAS');
@@ -476,6 +479,79 @@ class EstadisticaController extends Controller
             \App\Support\RegistroError::registrar($e, $request, 'ESTADISTICAS');
             return response()->json(['message' => 'No se pudo obtener el detalle de puntualidad.'], 500);
         }
+    }
+
+    // ── Antigüedad: dotación activa por tramo de años de servicio (PER_ING) ──
+    private function antiguedad(Request $request): array
+    {
+        $q = DB::table('personal as p')->where('p.PER_AOP', 'A')->whereNotNull('p.PER_ING');
+        $this->aplicarFiltros($q, $request);
+        $emps = $q->pluck('p.PER_ING');
+
+        $tramos = [['< 1 año', 0, 1], ['1 a 3', 1, 3], ['3 a 5', 3, 5], ['5 a 10', 5, 10], ['10 a 20', 10, 20], ['20+ años', 20, 999]];
+        $cont = array_fill(0, count($tramos), 0);
+        $hoy = \Carbon\Carbon::now();
+        foreach ($emps as $ing) {
+            $fi = $this->fecha($ing);
+            if (!$fi || $fi->year <= 1900) continue;
+            $anios = $fi->diffInYears($hoy);
+            foreach ($tramos as $i => $t) { if ($anios >= $t[1] && $anios < $t[2]) { $cont[$i]++; break; } }
+        }
+        $out = [];
+        foreach ($tramos as $i => $t) $out[] = ['label' => $t[0], 'cant' => $cont[$i]];
+        return $out;
+    }
+
+    // ── Edades: dotación activa por franja etaria (PER_FNA) ──
+    private function edades(Request $request): array
+    {
+        $q = DB::table('personal as p')->where('p.PER_AOP', 'A')->whereNotNull('p.PER_FNA');
+        $this->aplicarFiltros($q, $request);
+        $emps = $q->pluck('p.PER_FNA');
+
+        $tramos = [['< 25', 0, 25], ['25 a 35', 25, 35], ['35 a 45', 35, 45], ['45 a 55', 45, 55], ['55 a 65', 55, 65], ['65+', 65, 200]];
+        $cont = array_fill(0, count($tramos), 0);
+        $hoy = \Carbon\Carbon::now();
+        foreach ($emps as $fna) {
+            $fn = $this->fecha($fna);
+            if (!$fn || $fn->year <= 1900) continue;
+            $edad = $fn->diffInYears($hoy);
+            foreach ($tramos as $i => $t) { if ($edad >= $t[1] && $edad < $t[2]) { $cont[$i]++; break; } }
+        }
+        $out = [];
+        foreach ($tramos as $i => $t) $out[] = ['label' => $t[0], 'cant' => $cont[$i]];
+        return $out;
+    }
+
+    // ── Siniestralidad ART: días de accidente laboral (ART) por mes ──
+    private function siniestralidad(Request $request, \Carbon\Carbon $f1, \Carbon\Carbon $f2, array $meses): array
+    {
+        $q = DB::table('reloj_faltas_diarias as a')->join('personal as p', 'a.AFD_PER', '=', 'p.PER_COD')
+            ->where('a.AFD_LID', 'like', '%ART%')
+            ->whereRaw('CAST(a.AFD_FE1 AS DATE) <= ?', [$f2->format('Y-m-d')])
+            ->whereRaw('CAST(a.AFD_FE2 AS DATE) >= ?', [$f1->format('Y-m-d')]);
+        $this->aplicarFiltros($q, $request);
+        $rows = $q->get(['a.AFD_PER', 'a.AFD_FE1', 'a.AFD_FE2']);
+
+        $diasMes = []; $casosMes = [];
+        foreach ($rows as $r) {
+            $d1 = $this->fecha($r->AFD_FE1); $d2 = $this->fecha($r->AFD_FE2);
+            if (!$d1 || !$d2) continue;
+            if ($d1->lt($f1)) $d1 = $f1->copy();
+            if ($d2->gt($f2)) $d2 = $f2->copy();
+            // Reparte los días del episodio en los meses que toca.
+            $cur = $d1->copy();
+            $primero = true;
+            while ($cur->lte($d2)) {
+                $clave = $cur->format('Y-m');
+                $diasMes[$clave] = ($diasMes[$clave] ?? 0) + 1;
+                if ($primero) { $casosMes[$clave] = ($casosMes[$clave] ?? 0) + 1; $primero = false; }
+                $cur->addDay();
+            }
+        }
+        $out = [];
+        foreach ($meses as $clave => $label) $out[] = ['mes' => $clave, 'label' => $label, 'dias' => $diasMes[$clave] ?? 0, 'casos' => $casosMes[$clave] ?? 0];
+        return $out;
     }
 
     // ── KPIs del período ─────────────────────────────────────────────
