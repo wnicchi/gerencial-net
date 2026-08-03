@@ -25,24 +25,14 @@ El instalador está en la raíz del repo: **`instalar-terminal.ps1`**.
 
 ---
 
-## Opción B — Bloque para copiar (PowerShell **como Administrador**)
+## Opción B — Una sola línea (PowerShell **como Administrador**)
+
+> Pegar bloques multilínea suele **comerse los saltos de línea** y romper. Por eso
+> este comando va en **UNA sola línea** (con `;` entre cada paso): aunque se pegue
+> todo junto, funciona. Copiala **entera** y pegala en PowerShell como Administrador.
 
 ```powershell
-$IP="192.168.1.101"; $H="gerencia"
-$hosts="$env:WINDIR\System32\drivers\etc\hosts"
-if(-not (Select-String -Path $hosts -Pattern "\b$H\b" -Quiet)){ Add-Content $hosts "`r`n$IP $H" }
-[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
-[Net.ServicePointManager]::ServerCertificateValidationCallback={ $true }
-$req=[Net.HttpWebRequest]::Create("https://$H"); try{$req.GetResponse().Dispose()}catch{}
-$cer="$env:TEMP\$H.cer"; [IO.File]::WriteAllBytes($cer,$req.ServicePoint.Certificate.Export('Cert'))
-Import-Certificate -FilePath $cer -CertStoreLocation Cert:\LocalMachine\Root | Out-Null
-[Net.ServicePointManager]::ServerCertificateValidationCallback=$null
-$chrome=(Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe" -EA SilentlyContinue).'(default)'
-if(-not $chrome){$chrome="C:\Program Files\Google\Chrome\Application\chrome.exe"}
-$lnk=[Environment]::GetFolderPath("Desktop")+"\Tablero Gerencial.lnk"
-$s=(New-Object -ComObject WScript.Shell).CreateShortcut($lnk)
-$s.TargetPath=$chrome; $s.Arguments="--app=https://$H"; $s.IconLocation="$chrome,0"; $s.Save()
-Write-Host "Listo. Abri 'Tablero Gerencial' del Escritorio." -ForegroundColor Green
+$IP="192.168.1.101"; $H="gerencia"; $hosts="$env:WINDIR\System32\drivers\etc\hosts"; if(-not (Select-String -Path $hosts -Pattern "\b$H\b" -Quiet)){ Add-Content $hosts "`r`n$IP $H" }; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; [Net.ServicePointManager]::ServerCertificateValidationCallback={ $true }; $req=[Net.HttpWebRequest]::Create("https://$H"); try{$req.GetResponse().Dispose()}catch{}; $cer="$env:TEMP\$H.cer"; [IO.File]::WriteAllBytes($cer,$req.ServicePoint.Certificate.Export('Cert')); Import-Certificate -FilePath $cer -CertStoreLocation Cert:\LocalMachine\Root | Out-Null; [Net.ServicePointManager]::ServerCertificateValidationCallback=$null; $chrome=(Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe" -EA SilentlyContinue).'(default)'; if(-not $chrome){$chrome="C:\Program Files\Google\Chrome\Application\chrome.exe"}; $lnk=[Environment]::GetFolderPath("Desktop")+"\Tablero Gerencial.lnk"; $s=(New-Object -ComObject WScript.Shell).CreateShortcut($lnk); $s.TargetPath=$chrome; $s.Arguments="--app=https://$H"; $s.IconLocation="$chrome,0"; $s.Save(); Write-Host "Listo. Abri 'Tablero Gerencial' del Escritorio." -ForegroundColor Green
 ```
 
 ---
