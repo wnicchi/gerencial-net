@@ -26,7 +26,7 @@
       </div>
       <div class="cc-f">
         <span class="cc-lbl">Repetir nueva contraseña</span>
-        <input type="password" v-model="repetir" class="cc-inp" autocomplete="new-password" />
+        <div class="cc-pwrap"><input :type="ver3 ? 'text' : 'password'" v-model="repetir" class="cc-inp" autocomplete="new-password" /><button type="button" class="cc-eye" @click="ver3 = !ver3">{{ ver3 ? '🙈' : '👁' }}</button></div>
         <span v-if="repetir && repetir !== nueva" class="cc-err-mini">No coincide con la nueva contraseña.</span>
       </div>
 
@@ -44,7 +44,7 @@ import { useAuthStore } from '@/stores/auth'
 const auth = useAuthStore()
 const usuario = computed(() => (auth.usuario as any)?.NOMBRE ?? (auth.usuario as any)?.DATO1 ?? '')
 const actual = ref(''); const nueva = ref(''); const repetir = ref('')
-const ver1 = ref(false); const ver2 = ref(false)
+const ver1 = ref(false); const ver2 = ref(false); const ver3 = ref(false)
 const procesando = ref(false); const msg = ref(''); const msgError = ref(false)
 
 const r = computed(() => ({

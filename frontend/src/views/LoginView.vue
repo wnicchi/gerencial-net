@@ -25,14 +25,17 @@
 
           <div class="form-group">
             <label for="password">Contraseña</label>
-            <input
-              id="password"
-              v-model="form.password"
-              type="password"
-              placeholder="••••••••"
-              autocomplete="current-password"
-              required
-            />
+            <div class="input-clave">
+              <input
+                id="password"
+                v-model="form.password"
+                :type="verClave ? 'text' : 'password'"
+                placeholder="••••••••"
+                autocomplete="current-password"
+                required
+              />
+              <button type="button" class="ver-clave" :title="verClave ? 'Ocultar' : 'Mostrar'" @click="verClave = !verClave">{{ verClave ? '🙈' : '👁' }}</button>
+            </div>
           </div>
 
           <div v-if="error" class="alert-error">{{ error }}</div>
@@ -63,6 +66,7 @@ const router   = useRouter()
 const auth     = useAuthStore()
 const cargando = ref(false)
 const error    = ref('')
+const verClave = ref(false)
 const form     = ref({ login: '', password: '' })
 
 async function handleLogin() {
@@ -200,6 +204,15 @@ form {
 .form-group input:focus {
   border-color: #2d6a9f;
 }
+
+.input-clave { position: relative; display: flex; align-items: center; }
+.input-clave input { flex: 1; width: 100%; padding-right: 2.6rem; }
+.ver-clave {
+  position: absolute; right: 0.4rem; top: 50%; transform: translateY(-50%);
+  background: transparent; border: none; cursor: pointer; font-size: 1.05rem;
+  line-height: 1; padding: 0.3rem 0.35rem; border-radius: 6px; opacity: 0.75;
+}
+.ver-clave:hover { background: #f0faf4; opacity: 1; }
 
 .alert-error {
   background: #fee2e2;
