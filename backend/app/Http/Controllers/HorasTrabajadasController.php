@@ -188,6 +188,39 @@ class HorasTrabajadasController extends Controller
         return response()->json(['detalle' => $detalle, 'resumen' => array_values($resumen)]);
     }
 
+    /**
+     * Ranking de llegadas tarde por empleado (para el Tablero de Estadísticas).
+     * Devuelve, por cada empleado evaluado, los minutos tarde acumulados, la cantidad
+     * de días con llegada tarde y (opcional) el detalle por día. Reutiliza el mismo
+     * motor de cálculo que el informe de Llegadas Tarde. Ignora la salida: solo mide
+     * la llegada tarde pura. Keyed por PER_COD.
+     *
+     * @param  int[]  $codigos
+     * @return array<int, array{legajo:int,nombre:string,minutos:int,dias:int,detalle:array}>
+     */
+    public function rankingLlegadasTarde(array $codigos, \Carbon\Carbon $f1, \Carbon\Carbon $f2, int $maxTarde = 30, bool $conDetalle = false): array
+    {
+        $codigos = array_map('intval', $codigos);
+        if (!$codigos) return [];
+        $ctx = $this->cargarContexto($codigos, $f1, $f2);
+
+        $agg = [];
+        foreach ($codigos as $cod) {
+            $p = $ctx['personas']->get($cod);
+            if (!$p) continue;
+            foreach ($this->diasEmpleado($cod, $p, $f1, $f2, false, $ctx) as $r) {
+                $agg[$cod] ??= ['legajo' => $r['legajo'], 'nombre' => $r['nombre'], 'minutos' => 0, 'dias' => 0, 'detalle' => []];
+                $mt = $r['entra1'] % 100;
+                if ($mt > 0 && $mt < $maxTarde && $r['entra1'] > $r['horaEntrada']) {
+                    $agg[$cod]['minutos'] += $mt;
+                    $agg[$cod]['dias']++;
+                    if ($conDetalle) $agg[$cod]['detalle'][] = ['fecha' => $r['fecha'], 'minutos' => $mt];
+                }
+            }
+        }
+        return $agg;
+    }
+
     /** @route POST /api/reloj/secretaria-trabajo — planilla para Secretaría de Trabajo (pares de fichadas). */
     public function secretaria(Request $request): JsonResponse
     {

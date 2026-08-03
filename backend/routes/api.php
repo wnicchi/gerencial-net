@@ -970,6 +970,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\VerificarPermisoModulo::
     Route::get   ('estadisticas/faltas-empleado-detalle', [\App\Http\Controllers\EstadisticaController::class, 'faltasEmpleadoDetalle']);
     Route::get   ('estadisticas/tipos-sueldo', [\App\Http\Controllers\EstadisticaController::class, 'tiposSueldo']);
     Route::get   ('estadisticas/detalle-sueldos', [\App\Http\Controllers\EstadisticaController::class, 'detalleSueldos']);
+    Route::get   ('estadisticas/puntualidad', [\App\Http\Controllers\EstadisticaController::class, 'puntualidad']);
+    Route::get   ('estadisticas/puntualidad-empleado', [\App\Http\Controllers\EstadisticaController::class, 'puntualidadEmpleado']);
 
     // ── Tablero Gerencial · Stock/Logística (WMS, base LOGIST_UNIVERSAL) ──
     Route::get   ('tablero/wms/empresas', [\App\Http\Controllers\TableroController::class, 'empresas']);

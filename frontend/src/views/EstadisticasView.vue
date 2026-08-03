@@ -158,6 +158,33 @@
           </svg>
           <p v-if="!gFaltasEmp.n" class="es-vacio">Sin faltas registradas en el período.</p>
         </div>
+
+        <!-- 8) Puntualidad — llegadas tarde (bajo demanda) -->
+        <div class="es-card wide">
+          <div class="es-card-h">
+            <h3>⏰ Puntualidad — quiénes llegan más tarde</h3>
+            <div class="es-card-h-acc">
+              <span v-if="punt.cargado" class="es-sub">{{ punt.sinTarde }} sin llegadas tarde de {{ punt.evaluados }} evaluados</span>
+              <label class="es-punt-f">Desde <input type="date" v-model="punt.f1" class="es-mini" /></label>
+              <label class="es-punt-f">Hasta <input type="date" v-model="punt.f2" class="es-mini" /></label>
+              <button v-if="punt.cargado" class="es-ojo" title="Ver el desglose detallado" @click="abrirDesglose('puntualidad')">👁️</button>
+              <button class="es-mini" :disabled="punt.cargando" @click="cargarPuntualidad">{{ punt.cargando ? '⟳ Calculando…' : (punt.cargado ? 'Recalcular' : 'Calcular') }}</button>
+            </div>
+          </div>
+          <p v-if="!punt.cargado && !punt.cargando" class="es-vacio">Es un cálculo pesado (marcaciones vs turno). Elegí el período (hasta 3 meses) y apretá <b>Calcular</b>.</p>
+          <p v-if="punt.cargado && punt.acotado" class="es-vacio" style="color:#b45309">Rango mayor a 3 meses: se calculó sobre los últimos 3 meses ({{ fmtFecha(punt.desde) }} al {{ fmtFecha(punt.hasta) }}).</p>
+          <p v-if="punt.cargando" class="es-vacio">⟳ Calculando puntualidad… puede tardar unos segundos.</p>
+          <p v-if="punt.error" class="es-vacio" style="color:#b91c1c">{{ punt.error }}</p>
+          <svg v-if="punt.cargado && gPunt.n" :viewBox="`0 0 ${WW} ${Hh(gPunt.n)}`" class="es-svg" @mouseleave="tip = null">
+            <template v-for="b in gPunt.bars" :key="'pu'+b.i">
+              <rect :x="gPunt.x0" :y="b.y" :width="b.w" :height="b.h" rx="3" class="barra c8"
+                    @mousemove="ponerTip($event, `${b.label}: ${b.val} min tarde · ${b.dias} días`)" />
+              <text :x="gPunt.x0-6" :y="b.y + b.h/2 + 3" class="ejeYh">{{ b.label }}</text>
+              <text :x="gPunt.x0 + b.w + 5" :y="b.y + b.h/2 + 3" class="valH">{{ b.val }} min · {{ b.dias }}d</text>
+            </template>
+          </svg>
+          <p v-if="punt.cargado && !gPunt.n && !punt.error" class="es-vacio">Sin llegadas tarde en el período. 👏</p>
+        </div>
       </div>
     </template>
 
@@ -336,6 +363,7 @@ const pct = (v: number) => { const t = totalComp.value; return t > 0 ? (v / t * 
 const MAX_MESES = 12
 const addMeses = (iso: string, n: number) => { const d = new Date(iso + 'T00:00:00'); d.setMonth(d.getMonth() + n); return _iso(d) }
 function ajustarRango (movio: 'desde' | 'hasta') {
+  if (!f.fecha1 || !f.fecha2) return   // fecha a medio editar (vacía): no consultar todavía
   if (f.fecha1 && f.fecha2 && f.fecha1 > f.fecha2) {   // si se cruzaron, empareja
     if (movio === 'desde') f.fecha2 = f.fecha1; else f.fecha1 = f.fecha2
   }
@@ -360,6 +388,7 @@ async function recargarComposicion () {
 
 // ── Carga ──
 async function cargar () {
+  if (!f.fecha1 || !f.fecha2) return   // no consultar con una fecha a medio editar
   cargando.value = true; msg.value = ''
   try {
     const params: any = { fecha1: f.fecha1, fecha2: f.fecha2, agrupar: f.agrupar }
@@ -477,6 +506,35 @@ const gFaltasEmp = computed(() => {
   return { bars, n: items.length, x0 }
 })
 
+// 8) Puntualidad — llegadas tarde (bajo demanda, cálculo pesado)
+const restarDias = (iso: string, n: number) => { const dd = new Date(iso || new Date().toISOString().slice(0, 10)); dd.setDate(dd.getDate() - n); return dd.toISOString().slice(0, 10) }
+const punt = reactive<{ cargando: boolean; cargado: boolean; f1: string; f2: string; top: any[]; conTarde: number; sinTarde: number; evaluados: number; error: string; acotado: boolean; desde: string; hasta: string }>({
+  cargando: false, cargado: false, f1: restarDias(f.fecha2, 90), f2: f.fecha2, top: [], conTarde: 0, sinTarde: 0, evaluados: 0, error: '', acotado: false, desde: '', hasta: '',
+})
+async function cargarPuntualidad () {
+  if (!punt.f1 || !punt.f2 || punt.f1 > punt.f2) { punt.error = 'Revisá las fechas del gráfico.'; return }
+  punt.cargando = true; punt.error = ''
+  try {
+    const params: any = { fecha1: punt.f1, fecha2: punt.f2 }
+    for (const k of ['empresa', 'contratista', 'convenio', 'sector', 'categoria', 'lugar'] as const) if ((f as any)[k]) params[k] = (f as any)[k]
+    const { data } = await api.get('/estadisticas/puntualidad', { params })
+    punt.top = data.top ?? []; punt.conTarde = data.conTarde ?? 0; punt.sinTarde = data.sinTarde ?? 0; punt.evaluados = data.evaluados ?? 0
+    punt.acotado = !!data.acotado; punt.desde = data.desde ?? ''; punt.hasta = data.hasta ?? ''
+    punt.cargado = true
+  } catch (e: any) { punt.error = e?.response?.data?.message ?? 'No se pudo calcular la puntualidad.'; punt.cargado = false }
+  finally { punt.cargando = false }
+}
+const gPunt = computed(() => {
+  const items = (punt.top ?? []).slice(0, 15)
+  const max = Math.max(1, ...items.map((x: any) => x.minutos))
+  const x0 = 260, availW = WW - x0 - 70
+  const bars = items.map((x: any, i: number) => ({
+    i, y: PT + i * 26, h: 18, w: (x.minutos / max) * availW, val: x.minutos, dias: x.dias,
+    label: `${x.legajo} ${(x.nombre || '').trim()}`,
+  }))
+  return { bars, n: items.length, x0 }
+})
+
 // ── Desglose genérico (ojito) para el resto de los gráficos ──
 type Col = { key: string; label: string; r?: boolean; money?: boolean }
 const desg = reactive<{ abierto: boolean; icono: string; titulo: string; tipo: string; cols: Col[]; rows: any[]; footer: any[] | null; archivo: string; nivel: 'grupos' | 'sub'; sub: { titulo: string; cols: Col[]; rows: any[]; footer: any[] | null; cargando: boolean; archivo: string } }>({
@@ -521,6 +579,12 @@ const DRILL: Record<string, { endpoint: string; extra: (r: any) => Record<string
     endpoint: '/estadisticas/faltas-empleado-detalle', extra: (r) => ({ legajo: r.legajo }),
     cols: [{ key: 'tipo', label: 'Tipo de licencia' }, { key: 'dias', label: 'Días', r: true }],
     titulo: (r) => `${r.legajo} ${r.nombre}`, footer: (rows) => ['TOTAL', sumBy(rows, 'dias')], archivo: (r) => `FALTAS_${r.legajo}`,
+  },
+  puntualidad: {
+    endpoint: '/estadisticas/puntualidad-empleado', extra: (r) => ({ legajo: r.legajo }),
+    cols: [{ key: 'fecha', label: 'Fecha' }, { key: 'minutos', label: 'Min. tarde', r: true }],
+    titulo: (r) => `${r.legajo} ${r.nombre}`, rowsFrom: (data) => (data.rows ?? []).map((x: any) => ({ fecha: fmtFecha(x.fecha), minutos: x.minutos })),
+    footer: (rows) => ['TOTAL', sumBy(rows, 'minutos')], archivo: (r) => `PUNTUALIDAD_${r.legajo}`,
   },
 }
 
@@ -583,6 +647,13 @@ function abrirDesglose (tipo: string) {
     desg.icono = '🏅'; desg.titulo = 'Empleados con más faltas'
     desg.cols = [{ key: 'legajo', label: 'Legajo', r: true }, { key: 'nombre', label: 'Empleado' }, { key: 'dias', label: 'Días', r: true }]
     desg.rows = rows; desg.footer = null; desg.archivo = 'FALTAS_EMPLEADO'
+  } else if (tipo === 'puntualidad') {
+    const rows = punt.top ?? []
+    desg.icono = '⏰'; desg.titulo = 'Puntualidad — quiénes llegan más tarde'
+    desg.cols = [{ key: 'legajo', label: 'Legajo', r: true }, { key: 'nombre', label: 'Empleado' }, { key: 'minutos', label: 'Min. tarde', r: true }, { key: 'dias', label: 'Días tarde', r: true }]
+    desg.rows = rows
+    desg.footer = ['', 'TOTAL', sumBy(rows, 'minutos'), sumBy(rows, 'dias')]
+    desg.archivo = 'PUNTUALIDAD'
   } else return
   desg.abierto = true
 }
@@ -845,6 +916,7 @@ async function exportarExcel () {
 .es-sub { font-size:12px; color:#64748b; } .es-mini { border:1px solid #d1d5db; border-radius:6px; padding:4px 8px; font-size:12px; }
 .es-card-h-acc { display:flex; align-items:center; gap:8px; }
 .es-ojo { background:#fff; border:1px solid #d1d5db; border-radius:6px; padding:3px 8px; cursor:pointer; font-size:14px; } .es-ojo:hover { background:#eff6ff; }
+.es-punt-f { display:flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#1b4332; } .es-punt-f input { font-weight:400; }
 /* Modal de desglose */
 .es-det-ov { position:fixed; inset:0; background:rgba(15,23,42,.55); z-index:9800; display:flex; align-items:center; justify-content:center; padding:20px; }
 .es-det-md { width:min(920px,98vw); max-height:90vh; background:#fff; border-radius:12px; box-shadow:0 24px 60px rgba(0,0,0,.4); display:flex; flex-direction:column; }

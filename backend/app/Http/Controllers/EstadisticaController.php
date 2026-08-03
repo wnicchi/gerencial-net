@@ -411,6 +411,73 @@ class EstadisticaController extends Controller
         }
     }
 
+    /**
+     * Puntualidad: ranking de empleados con más llegadas tarde (Top N) + resumen de
+     * cumplidores. Cálculo pesado (marcaciones vs turno), por eso es un endpoint aparte
+     * que el tablero pide de forma diferida. Respeta los filtros del tablero.
+     *
+     * @route GET /api/estadisticas/puntualidad?fecha1=&fecha2=&…filtros
+     */
+    public function puntualidad(Request $request): JsonResponse
+    {
+        $d = $request->validate(['fecha1' => 'required|date', 'fecha2' => 'required|date']);
+        $f1 = \Carbon\Carbon::parse($d['fecha1'])->startOfDay();
+        $f2 = \Carbon\Carbon::parse($d['fecha2'])->startOfDay();
+        // El cálculo es pesado (marcaciones vs turno por empleado/día): si el rango supera
+        // 3 meses se acota a los últimos 92 días (y se avisa en la respuesta), en vez de fallar.
+        $acotado = false;
+        if ($f1->diffInDays($f2) > 92) { $f1 = $f2->copy()->subDays(92); $acotado = true; }
+        try {
+            // Empleados a evaluar: activos que cumplen los filtros del tablero.
+            $q = DB::table('personal as p')->where('p.PER_AOP', 'A');
+            $this->aplicarFiltros($q, $request);
+            $codigos = $q->pluck('p.PER_COD')->map(fn ($c) => (int) $c)->all();
+            if (!$codigos) return response()->json(['top' => [], 'conTarde' => 0, 'sinTarde' => 0, 'evaluados' => 0]);
+
+            // Cache 1 h por combinación de filtros + período (evita recalcular los ~25 s en cada apertura).
+            $clave = 'punt_' . md5(config('database.connections.sqlsrv_rrhh.database') . '|' . implode(',', $codigos) . '|' . $f1->toDateString() . '|' . $f2->toDateString());
+            $out = \Illuminate\Support\Facades\Cache::remember($clave, now()->addHour(), function () use ($codigos, $f1, $f2) {
+                $agg = app(\App\Http\Controllers\HorasTrabajadasController::class)->rankingLlegadasTarde($codigos, $f1, $f2, 30, false);
+                $evaluados = count($agg);
+                $conTarde = array_values(array_filter($agg, fn ($e) => $e['minutos'] > 0));
+                usort($conTarde, fn ($a, $b) => $b['minutos'] <=> $a['minutos']);
+                $top = array_map(fn ($e) => ['legajo' => $e['legajo'], 'nombre' => $e['nombre'], 'minutos' => $e['minutos'], 'dias' => $e['dias']], array_slice($conTarde, 0, 15));
+                return ['top' => $top, 'conTarde' => count($conTarde), 'sinTarde' => $evaluados - count($conTarde), 'evaluados' => $evaluados];
+            });
+            $out['acotado'] = $acotado;
+            $out['desde'] = $f1->toDateString();
+            $out['hasta'] = $f2->toDateString();
+            return response()->json($out);
+        } catch (\Throwable $e) {
+            \App\Support\RegistroError::registrar($e, $request, 'ESTADISTICAS');
+            return response()->json(['message' => 'No se pudo calcular la puntualidad.'], 500);
+        }
+    }
+
+    /**
+     * Drill de puntualidad: días con llegada tarde de UN empleado (fecha + minutos).
+     *
+     * @route GET /api/estadisticas/puntualidad-empleado?fecha1=&fecha2=&legajo=&…filtros
+     */
+    public function puntualidadEmpleado(Request $request): JsonResponse
+    {
+        $d = $request->validate(['fecha1' => 'required|date', 'fecha2' => 'required|date', 'legajo' => 'required|integer']);
+        $f1 = \Carbon\Carbon::parse($d['fecha1'])->startOfDay();
+        $f2 = \Carbon\Carbon::parse($d['fecha2'])->startOfDay();
+        if ($f1->diffInDays($f2) > 92) $f1 = $f2->copy()->subDays(92);   // mismo recorte que el ranking
+        try {
+            $cod = (int) DB::table('personal')->where('PER_LEG', (int) $d['legajo'])->value('PER_COD');
+            if (!$cod) return response()->json(['rows' => []]);
+            $agg = app(\App\Http\Controllers\HorasTrabajadasController::class)->rankingLlegadasTarde([$cod], $f1, $f2, 30, true);
+            $rows = $agg[$cod]['detalle'] ?? [];
+            $rows = array_map(fn ($x) => ['fecha' => $x['fecha'], 'minutos' => $x['minutos']], $rows);
+            return response()->json(['rows' => $rows]);
+        } catch (\Throwable $e) {
+            \App\Support\RegistroError::registrar($e, $request, 'ESTADISTICAS');
+            return response()->json(['message' => 'No se pudo obtener el detalle de puntualidad.'], 500);
+        }
+    }
+
     // ── KPIs del período ─────────────────────────────────────────────
     private function kpis(Request $request, \Carbon\Carbon $f1, \Carbon\Carbon $f2): array
     {
