@@ -10,13 +10,24 @@ terminal**.
 
 ---
 
-## Opción A — El script (recomendado)
+## Opción A — El `.bat` (la más fácil, se auto-eleva) ⭐
 
-El instalador está en la raíz del repo: **`instalar-terminal.ps1`**.
+Copiá a la terminal los **dos archivos juntos** (raíz del repo): **`instalar-terminal.bat`**
+y **`instalar-terminal.ps1`**. Después **doble clic en `instalar-terminal.bat`**.
+
+- Aparece el cartel de **permisos de Administrador (UAC)** → aceptá.
+- Hace todo solo (hosts + certificado + acceso directo). Sin abrir consolas ni pegar nada.
+
+> Si NO se ejecuta como administrador, el `hosts` da **"Acceso denegado"** y el
+> certificado falla — por eso el `.bat` pide el permiso automáticamente.
+
+---
+
+## Opción B — El script `.ps1` a mano
 
 1. Copiá `instalar-terminal.ps1` a la terminal (pendrive o carpeta de red).
-2. **Clic derecho** → **Ejecutar con PowerShell** (si pregunta, aceptá elevar a
-   administrador).
+2. **Clic derecho** → **Ejecutar con PowerShell** (debe correr como **Administrador**;
+   si no, el script te avisa).
 3. Hace todo solo:
    - Agrega `gerencia` al `hosts` apuntando al servidor.
    - Instala el certificado del sitio en *Entidades de certificación raíz de confianza*.
@@ -25,7 +36,7 @@ El instalador está en la raíz del repo: **`instalar-terminal.ps1`**.
 
 ---
 
-## Opción B — Una sola línea (PowerShell **como Administrador**)
+## Opción C — Una sola línea (PowerShell **como Administrador**)
 
 > Pegar bloques multilínea suele **comerse los saltos de línea** y romper. Por eso
 > este comando va en **UNA sola línea** (con `;` entre cada paso): aunque se pegue
