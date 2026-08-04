@@ -18,14 +18,14 @@
         <span class="card-desc">Stock, movimientos y operación por <strong>empresa/cliente</strong> y totales <strong>globales</strong>.</span>
       </router-link>
 
-      <router-link to="/dashboard/alertas" class="card card-alertas">
-        <span class="card-ico">🔔</span>
-        <span class="card-tit">Alertas</span>
-        <span class="card-desc">Exámenes por vencer, embargos, vencimientos de licencias, plazos de prueba y más.</span>
+      <router-link to="/dashboard/pendiente-facturacion" class="card card-gestion">
+        <span class="card-ico">🧾</span>
+        <span class="card-tit">Gestión · Pendiente de Facturación</span>
+        <span class="card-desc">Montos por facturar (contratos, transportes y servicios) por cliente, con total y desglose.</span>
       </router-link>
     </div>
 
-    <p class="home-foot">Fuentes en vivo: RRHH (sqlRRHHlog) · Stock/Logística (LOGIST_UNIVERSAL). Solo lectura.</p>
+    <p class="home-foot">Fuentes en vivo: RRHH (sqlRRHHlog) · Stock/Logística (LOGIST_UNIVERSAL) · Gestión (sqlLOGIST). Solo lectura.</p>
   </div>
 </template>
 
@@ -66,7 +66,7 @@ const nombre = computed(() => {
 .card:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(0,0,0,0.10); }
 .card-rrhh    { border-top-color: #2a78d6; }
 .card-wms     { border-top-color: #1baf7a; }
-.card-alertas { border-top-color: #eb6834; }
+.card-gestion { border-top-color: #eda100; }
 .card-ico { font-size: 2rem; line-height: 1; }
 .card-tit { color: #1e293b; font-size: 1.06rem; font-weight: 700; }
 .card-desc { color: #64748b; font-size: 0.88rem; line-height: 1.4; }
