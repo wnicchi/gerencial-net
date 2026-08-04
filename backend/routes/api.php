@@ -977,6 +977,9 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\VerificarPermisoModulo::
     Route::get   ('tablero/wms/empresas', [\App\Http\Controllers\TableroController::class, 'empresas']);
     Route::get   ('tablero/wms/antiguedad-detalle', [\App\Http\Controllers\TableroController::class, 'antiguedadDetalle']);
     Route::get   ('tablero/wms',          [\App\Http\Controllers\TableroController::class, 'wms']);
+
+    // ── Tablero Gerencial · Gestión (Logística, base sqlLOGIST) ──
+    Route::get   ('tablero/gestion/pendiente-facturacion', [\App\Http\Controllers\PendienteFacturacionController::class, 'index']);
     Route::get   ('liquidaciones/consultar', [LiquidacionController::class, 'consultar']);
     Route::delete('liquidaciones',           [LiquidacionController::class, 'borrar']);
     Route::get   ('comparativa-liquidaciones', [ComparativaLiquidacionController::class, 'index']);

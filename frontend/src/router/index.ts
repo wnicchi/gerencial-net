@@ -27,6 +27,8 @@ const router = createRouter({
         { path: 'tablero-wms',   name: 'tablero-wms',    component: () => import('@/views/TableroWmsView.vue') },
         // Alertas (reusa la vista de Alertas de RRHH)
         { path: 'alertas',       name: 'alertas',        component: () => import('@/views/AlertasView.vue') },
+        // Gestión (Logística) · Pendiente de Facturación (base sqlLOGIST)
+        { path: 'pendiente-facturacion', name: 'pendiente-facturacion', component: () => import('@/views/PendienteFacturacionView.vue') },
 
         // ── Sistema / Seguridad (solo admin) ──
         { path: 'cambio-clave',    name: 'cambio-clave',    component: () => import('@/views/CambioClaveView.vue') },

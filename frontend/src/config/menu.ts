@@ -24,6 +24,8 @@ export const menuConfig: MenuItem[] = [
       { id: 'tab-rrhh',    label: 'RRHH · Sueldos y Personal', icono: '📈', ruta: '/dashboard/estadisticas' },
       { id: 'tab-wms',     label: 'Stock · Logística (WMS)',   icono: '📦', ruta: '/dashboard/tablero-wms' },
       { id: 'tab-alertas', label: 'Alertas',                   icono: '🔔', ruta: '/dashboard/alertas' },
+      { id: 's-tab-2', separador: true, label: '', icono: '' },
+      { id: 'tab-gestion-fact', label: 'Gestión · Pend. Facturación', icono: '🧾', ruta: '/dashboard/pendiente-facturacion' },
     ]
   },
 
