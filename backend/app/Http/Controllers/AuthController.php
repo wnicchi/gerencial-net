@@ -101,8 +101,11 @@ class AuthController extends Controller
             return response()->json(['message' => 'Credenciales incorrectas.'], 401);
         }
 
-        // Revocar tokens anteriores (una sesión activa por vez)
-        $usuario->tokens()->delete();
+        // GERENCIAL: NO se revocan los tokens anteriores. El tablero se ve desde
+        // varias terminales/navegadores a la vez; si se borraran, un login nuevo
+        // dejaba "Unauthenticated" a las otras sesiones. Se permiten concurrentes.
+        // (Se limpian solo los sobrantes viejos para que no se acumulen sin límite.)
+        $usuario->tokens()->where('created_at', '<', now()->subDays(30))->delete();
 
         $token    = $usuario->createToken('auth_token')->plainTextToken;
         $esAdmin  = (int)$usuario->ES_ADMIN === 1;
