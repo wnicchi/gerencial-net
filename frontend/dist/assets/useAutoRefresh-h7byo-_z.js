@@ -1,0 +1,1 @@
+import{A as e,j as t}from"./index-k9szG6Q8.js";function n(n,r=300*1e3){let i,a=()=>{document.visibilityState===`visible`&&n()},o=()=>{document.visibilityState===`visible`&&n()};t(()=>{i=window.setInterval(a,r),document.addEventListener(`visibilitychange`,o)}),e(()=>{i!==void 0&&window.clearInterval(i),document.removeEventListener(`visibilitychange`,o)})}export{n as t};

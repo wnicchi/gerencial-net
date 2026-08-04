@@ -374,6 +374,7 @@ import { ref, computed, onMounted, nextTick, h } from 'vue'
 import api from '@/services/auth'
 import jsPDF from 'jspdf'
 import { guardarDesdeUrl } from '@/utils/descargas'
+import { useAutoRefresh } from '@/composables/useAutoRefresh'
 
 // Paleta categórica validada (skill dataviz).
 const C = { c1: '#2a78d6', c2: '#eb6834', c3: '#1baf7a', c4: '#eda100', c8: '#e34948' }
@@ -752,6 +753,7 @@ async function imprimirPDF () {
 }
 
 onMounted(async () => { await cargarEmpresas(); await cargar() })
+useAutoRefresh(cargar)   // tablero en tiempo real: recarga cada 5 min
 </script>
 
 <style scoped>

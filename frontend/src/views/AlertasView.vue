@@ -23,10 +23,12 @@
 import { ref } from 'vue'
 import AlertasPanel from '@/components/AlertasPanel.vue'
 import ChatIA from '@/components/ChatIA.vue'
+import { useAutoRefresh } from '@/composables/useAutoRefresh'
 
 const modalIA = ref(false)
 const recarga = ref(0)
 const recargar = () => { recarga.value++ }
+useAutoRefresh(recargar)   // tablero en tiempo real: recarga cada 5 min
 </script>
 
 <style scoped>
