@@ -114,6 +114,7 @@ const nfInt = new Intl.NumberFormat('es-AR')
 const nf = (n: number) => nfInt.format(n ?? 0)
 const money = (n: number) => '$ ' + new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n ?? 0)
 const pct = (v: number, max: number) => (max > 0 ? Math.max(2, (v / max) * 100) : 0)
+const hexRgb = (hex: string): [number, number, number] => { const h = hex.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)] }
 const COL_SRV: Record<string, string> = { CONTRATOS: C.c3, TRANSPORTES: C.c1, SERVICIOS: C.c2 }
 const colorServicio = (s: string) => COL_SRV[s] ?? '#94a3b8'
 
@@ -178,6 +179,23 @@ async function cargar () {
 // ── PDF ──
 const generandoPdf = ref(false); const pdfUrl = ref(''); const pdfNombre = ref('')
 const cerrarPdf = () => { if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value); pdfUrl.value = '' }
+
+// Rasteriza un <svg> del DOM a PNG (para meter la torta en el PDF).
+const SVG_CSS = `text{font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.torta-lbl{fill:#fff;font-size:10px;font-weight:700}`
+function svgAPng (svg: SVGSVGElement, escala = 2): Promise<{ url: string; w: number; h: number }> {
+  const vb = (svg.getAttribute('viewBox') || '0 0 180 180').split(/\s+/).map(Number)
+  const w = vb[2] || 180, h = vb[3] || 180
+  const clon = svg.cloneNode(true) as SVGSVGElement
+  clon.setAttribute('xmlns', 'http://www.w3.org/2000/svg'); clon.setAttribute('width', String(w)); clon.setAttribute('height', String(h))
+  const st = document.createElementNS('http://www.w3.org/2000/svg', 'style'); st.textContent = SVG_CSS; clon.insertBefore(st, clon.firstChild)
+  const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(clon))
+  return new Promise((res) => {
+    const img = new Image()
+    img.onload = () => { const cv = document.createElement('canvas'); cv.width = w * escala; cv.height = h * escala; const ctx = cv.getContext('2d')!; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(img, 0, 0, cv.width, cv.height); res({ url: cv.toDataURL('image/png'), w, h }) }
+    img.onerror = () => res({ url: '', w, h })
+    img.src = url
+  })
+}
 async function imprimirPDF () {
   if (!data.value) return
   generandoPdf.value = true
@@ -195,6 +213,45 @@ async function imprimirPDF () {
     for (const [k, v] of kv) { doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text(String(k) + ':', ML, y); doc.setFont('helvetica', 'normal'); doc.text(String(v), ML + 42, y); y += 5 }
     y += 3
 
+    // Torta por tipo (rasterizada del gráfico en pantalla)
+    const svg = document.querySelector('.pf .torta-svg') as SVGSVGElement | null
+    if (svg) {
+      const { url, w, h } = await svgAPng(svg)
+      if (url) {
+        const size = 58
+        if (y + 8 + size > PH - 14) { doc.addPage(); y = 16 }
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(27, 67, 50); doc.text('Pendiente por tipo', ML, y); y += 4
+        doc.addImage(url, 'PNG', ML, y, size * (w / h), size)
+        // Leyenda de la torta al costado
+        let ly = y + 4
+        doc.setFontSize(8)
+        for (const s of torta.value) {
+          const [r, g, b] = hexRgb(s.color)
+          doc.setFillColor(r, g, b); doc.rect(ML + size + 6, ly - 2.6, 3.2, 3.2, 'F')
+          doc.setTextColor(50); doc.text(`${s.nombre}: ${money(s.val)} (${s.pct.toFixed(1)}%)`, ML + size + 11, ly); ly += 5
+        }
+        y += size + 6
+      }
+    }
+
+    // Pendiente por cliente (barras)
+    if (data.value.porCliente.length) {
+      if (y > PH - 30) { doc.addPage(); y = 16 }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(27, 67, 50); doc.text('Pendiente por cliente', ML, y); y += 6
+      const maxM = Math.max(1, ...data.value.porCliente.map((c: any) => c.monto))
+      const bx = ML + 58, bw0 = 76
+      doc.setFontSize(8)
+      for (const c of data.value.porCliente) {
+        if (y > PH - 14) { doc.addPage(); y = 16 }
+        doc.setTextColor(60); doc.text(doc.splitTextToSize(String(c.cliente), 54)[0] || '', ML, y)
+        doc.setFillColor(241, 245, 249); doc.rect(bx, y - 2.8, bw0, 3.2, 'F')
+        doc.setFillColor(42, 120, 214); doc.rect(bx, y - 2.8, Math.max(0.4, (c.monto / maxM) * bw0), 3.2, 'F')
+        doc.setTextColor(30); doc.text(money(c.monto), PW - ML, y, { align: 'right' }); y += 5.2
+      }
+      y += 4
+    }
+
+    if (y > PH - 24) { doc.addPage(); y = 16 }
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(27, 67, 50); doc.text('Detalle', ML, y); y += 5
     const xs = [ML, ML + 92, ML + 120, PW - ML]; const heads = ['Cliente', 'Tipo', 'Período', 'Monto']
     doc.setFontSize(8); doc.setTextColor(0, 0, 0); doc.setFont('helvetica', 'bold')
