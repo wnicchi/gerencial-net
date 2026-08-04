@@ -9,6 +9,7 @@
     <div class="es-cab">
       <div class="es-ico">📊</div>
       <div class="es-tx"><h1>Tablero Gerencial</h1><p>Estadísticas de RRHH para la toma de decisiones</p></div>
+      <RefreshTimer :label="etiqueta" />
       <button class="es-pdf" :disabled="!datos || generandoPdf" @click="imprimirPDF">{{ generandoPdf ? '⟳…' : '🖨 Imprimir PDF' }}</button>
       <button class="es-exp" :disabled="!datos" @click="exportarExcel">📊 Exportar Excel</button>
     </div>
@@ -386,6 +387,7 @@ import api from '@/services/auth'
 import jsPDF from 'jspdf'
 import { guardarComo, guardarDesdeUrl } from '@/utils/descargas'
 import { useAutoRefresh } from '@/composables/useAutoRefresh'
+import RefreshTimer from '@/components/RefreshTimer.vue'
 
 // ── Geometría base de los gráficos ──
 const W = 560, H = 260, PL = 48, PR = 16, PT = 14, PB = 26
@@ -403,7 +405,7 @@ const f = reactive({
 const tiposSueldo = ref<{ tip: number; label: string }[]>([])
 
 const datos = ref<any>(null); const cargando = ref(false); const msg = ref('')
-useAutoRefresh(() => cargar())   // tablero en tiempo real: recarga cada 5 min con los filtros actuales
+const { etiqueta } = useAutoRefresh(() => cargar())   // tablero en tiempo real: recarga cada 5 min con los filtros actuales
 const tip = ref<{ x: number; y: number; text: string } | null>(null)
 const ponerTip = (e: MouseEvent, text: string) => { tip.value = { x: e.clientX + 12, y: e.clientY - 10, text } }
 

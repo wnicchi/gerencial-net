@@ -24,6 +24,7 @@
       </button>
       <button class="btn-print" @click="imprimirPDF" :disabled="!data || cargando || generandoPdf" title="Ver PDF (previsualizar, descargar o imprimir)">{{ generandoPdf ? '⟳…' : '🖨 Imprimir PDF' }}</button>
       <span class="alcance" v-if="data">{{ data.empresaNombre }}</span>
+      <RefreshTimer :label="etiqueta" />
     </div>
 
     <div v-if="error" class="msg-error">{{ error }}</div>
@@ -375,6 +376,7 @@ import api from '@/services/auth'
 import jsPDF from 'jspdf'
 import { guardarDesdeUrl } from '@/utils/descargas'
 import { useAutoRefresh } from '@/composables/useAutoRefresh'
+import RefreshTimer from '@/components/RefreshTimer.vue'
 
 // Paleta categórica validada (skill dataviz).
 const C = { c1: '#2a78d6', c2: '#eb6834', c3: '#1baf7a', c4: '#eda100', c8: '#e34948' }
@@ -753,7 +755,7 @@ async function imprimirPDF () {
 }
 
 onMounted(async () => { await cargarEmpresas(); await cargar() })
-useAutoRefresh(cargar)   // tablero en tiempo real: recarga cada 5 min
+const { etiqueta } = useAutoRefresh(cargar)   // tablero en tiempo real: recarga cada 5 min
 </script>
 
 <style scoped>

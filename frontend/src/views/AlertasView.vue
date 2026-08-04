@@ -4,6 +4,7 @@
     <div class="av-cab">
       <div class="av-cab-ico">🔔</div>
       <div class="av-cab-tx"><h1>Alertas</h1><p>Avisos del análisis de los datos</p></div>
+      <RefreshTimer :label="etiqueta" />
       <button class="av-btn-ia" title="Asistente IA" @click="modalIA = true">🤖 IA</button>
       <button class="av-btn-recargar" @click="recargar">↻ Actualizar</button>
     </div>
@@ -24,11 +25,12 @@ import { ref } from 'vue'
 import AlertasPanel from '@/components/AlertasPanel.vue'
 import ChatIA from '@/components/ChatIA.vue'
 import { useAutoRefresh } from '@/composables/useAutoRefresh'
+import RefreshTimer from '@/components/RefreshTimer.vue'
 
 const modalIA = ref(false)
 const recarga = ref(0)
 const recargar = () => { recarga.value++ }
-useAutoRefresh(recargar)   // tablero en tiempo real: recarga cada 5 min
+const { etiqueta } = useAutoRefresh(recargar)   // tablero en tiempo real: recarga cada 5 min
 </script>
 
 <style scoped>

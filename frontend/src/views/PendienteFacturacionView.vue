@@ -6,6 +6,7 @@
         <p class="pf-sub">Gestión (Logística) — montos por facturar: contratos, transportes y servicios.</p>
       </div>
       <div class="pf-acc">
+        <RefreshTimer :label="etiqueta" />
         <button class="btn-refresh" @click="cargar" :disabled="cargando">{{ cargando ? 'Cargando…' : '↻ Actualizar' }}</button>
         <button class="btn-print" @click="imprimirPDF" :disabled="!data || cargando || generandoPdf">{{ generandoPdf ? '⟳…' : '🖨 Imprimir PDF' }}</button>
       </div>
@@ -109,6 +110,7 @@ import api from '@/services/auth'
 import jsPDF from 'jspdf'
 import { guardarDesdeUrl } from '@/utils/descargas'
 import { useAutoRefresh } from '@/composables/useAutoRefresh'
+import RefreshTimer from '@/components/RefreshTimer.vue'
 
 const C = { c1: '#2a78d6', c2: '#eb6834', c3: '#1baf7a' }
 const nfInt = new Intl.NumberFormat('es-AR')
@@ -274,7 +276,7 @@ async function imprimirPDF () {
 }
 
 onMounted(cargar)
-useAutoRefresh(cargar)   // tablero en tiempo real: recarga cada 5 min
+const { etiqueta } = useAutoRefresh(cargar)   // tablero en tiempo real: recarga cada 5 min
 </script>
 
 <style scoped>
@@ -282,7 +284,7 @@ useAutoRefresh(cargar)   // tablero en tiempo real: recarga cada 5 min
 .pf-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .pf-head h1 { margin: 0; color: #1b4332; font-size: 1.5rem; font-weight: 800; }
 .pf-sub { margin: 0.2rem 0 0; color: #475569; font-size: 0.9rem; }
-.pf-acc { display: flex; gap: 0.6rem; }
+.pf-acc { display: flex; gap: 0.6rem; align-items: center; }
 .btn-refresh { padding: 0.45rem 0.9rem; background: #1b4332; color: #fff; border: none; border-radius: 7px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
 .btn-refresh:hover { background: #14532d; } .btn-refresh:disabled { opacity: 0.6; }
 .btn-print { padding: 0.45rem 0.9rem; background: #fff; color: #1b4332; border: 1px solid #1b4332; border-radius: 7px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
