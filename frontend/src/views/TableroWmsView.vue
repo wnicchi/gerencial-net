@@ -42,7 +42,7 @@
       <div class="grid">
         <!-- ── Stock por empresa (comparativo) ── -->
         <section class="card">
-          <h3>📦 Stock por empresa <small>(posiciones)</small></h3>
+          <div class="card-head"><h3>📦 Stock por empresa <small>(posiciones)</small></h3><button class="wms-ojo" title="¿Qué muestra este gráfico?" @click="doc = DOCS.stockEmpresa">👁</button></div>
           <div v-if="!data.stockPorEmpresa.length" class="vacio">Sin stock.</div>
           <div v-else class="hbars">
             <div v-for="e in data.stockPorEmpresa" :key="e.empresa" class="hbar-row">
@@ -57,7 +57,7 @@
 
         <!-- ── Stock por estado ── -->
         <section class="card">
-          <h3>🏷️ Stock por estado <small>(posiciones)</small></h3>
+          <div class="card-head"><h3>🏷️ Stock por estado <small>(posiciones)</small></h3><button class="wms-ojo" title="¿Qué muestra este gráfico?" @click="doc = DOCS.stockEstado">👁</button></div>
           <div v-if="!data.stockPorEstado.length" class="vacio">Sin datos.</div>
           <svg v-else :viewBox="`0 0 ${W} ${H}`" class="chart">
             <g v-for="(b, i) in barsEstado" :key="i">
@@ -72,7 +72,7 @@
 
         <!-- ── Torta: participación por empresa ── -->
         <section class="card">
-          <h3>🥧 Participación en el stock por empresa <small>(posiciones)</small></h3>
+          <div class="card-head"><h3>🥧 Participación en el stock por empresa <small>(posiciones)</small></h3><button class="wms-ojo" title="¿Qué muestra este gráfico?" @click="doc = DOCS.tortaEmpresa">👁</button></div>
           <div v-if="!torta.length" class="vacio">Sin stock.</div>
           <div v-else class="torta-wrap">
             <svg viewBox="0 0 180 180" class="torta-svg">
@@ -93,7 +93,7 @@
 
         <!-- ── Torta: salud del inventario por estado ── -->
         <section class="card">
-          <h3>🩺 Salud del inventario (por estado) <small>(posiciones)</small></h3>
+          <div class="card-head"><h3>🩺 Salud del inventario (por estado) <small>(posiciones)</small></h3><button class="wms-ojo" title="¿Qué muestra este gráfico?" @click="doc = DOCS.tortaEstado">👁</button></div>
           <div v-if="!tortaEstado.length" class="vacio">Sin datos.</div>
           <div v-else class="torta-wrap">
             <svg viewBox="0 0 180 180" class="torta-svg">
@@ -114,7 +114,7 @@
 
         <!-- ── Ranking: empresas que más mueven (recepciones + despachos) ── -->
         <section class="card">
-          <h3>🚚 Empresas que más mueven <small>(recepciones + despachos)</small></h3>
+          <div class="card-head"><h3>🚚 Empresas que más mueven <small>(recepciones + despachos)</small></h3><button class="wms-ojo" title="¿Qué muestra este gráfico?" @click="doc = DOCS.mueven">👁</button></div>
           <Leyenda :items="[['Recepciones', C.c1], ['Despachos', C.c2]]" />
           <div v-if="!actividadPorEmpresa.length" class="vacio">Sin operación en el período.</div>
           <div v-else class="hbars">
@@ -131,7 +131,7 @@
 
         <!-- ── Ocupación por nave (distribución física) ── -->
         <section class="card">
-          <h3>🏭 Ocupación por nave <small>(posiciones)</small></h3>
+          <div class="card-head"><h3>🏭 Ocupación por nave <small>(posiciones)</small></h3><button class="wms-ojo" title="¿Qué muestra este gráfico?" @click="doc = DOCS.nave">👁</button></div>
           <div class="ley-empresas" v-if="ocupacionNave.length">
             <span v-for="e in empresasNave" :key="e.empresa" class="ley-item"><span class="ley-dot" :style="{ background: e.color }"></span>{{ e.nombre }}</span>
           </div>
@@ -149,7 +149,7 @@
 
         <!-- ── Antigüedad del stock ── -->
         <section class="card">
-          <h3>⏳ Antigüedad del stock <small>(clic en un rango para ver los productos)</small></h3>
+          <div class="card-head"><h3>⏳ Antigüedad del stock <small>(clic en un rango para ver los productos)</small></h3><button class="wms-ojo" title="¿Qué muestra este gráfico?" @click="doc = DOCS.antiguedad">👁</button></div>
           <div v-if="!antiguedad.length" class="vacio">Sin datos.</div>
           <div v-else class="hbars">
             <div v-for="a in antiguedad" :key="a.rango" class="hbar-row hbar-click" @click="abrirAntiguedad(a.rango)" :title="'Ver productos: ' + a.rango">
@@ -168,9 +168,12 @@
             <h3>🔄 Movimientos de stock por mes
               <small>{{ modoMov === 'todos' ? '(ingresos vs egresos)' : '(total por empresa)' }}</small>
             </h3>
-            <div class="toggle">
-              <button :class="{ on: modoMov === 'todos' }" @click="modoMov = 'todos'">Todos</button>
-              <button :class="{ on: modoMov === 'empresas' }" @click="modoMov = 'empresas'">Por empresas</button>
+            <div class="ch-acc">
+              <button class="wms-ojo" title="¿Qué muestra este gráfico?" @click="doc = DOCS.movimientos">👁</button>
+              <div class="toggle">
+                <button :class="{ on: modoMov === 'todos' }" @click="modoMov = 'todos'">Todos</button>
+                <button :class="{ on: modoMov === 'empresas' }" @click="modoMov = 'empresas'">Por empresas</button>
+              </div>
             </div>
           </div>
 
@@ -205,9 +208,12 @@
             <h3>🚚 Operación por mes
               <small>{{ modoOper === 'todos' ? '(recepciones vs despachos)' : '(total por empresa)' }}</small>
             </h3>
-            <div class="toggle">
-              <button :class="{ on: modoOper === 'todos' }" @click="modoOper = 'todos'">Todos</button>
-              <button :class="{ on: modoOper === 'empresas' }" @click="modoOper = 'empresas'">Por empresas</button>
+            <div class="ch-acc">
+              <button class="wms-ojo" title="¿Qué muestra este gráfico?" @click="doc = DOCS.operacion">👁</button>
+              <div class="toggle">
+                <button :class="{ on: modoOper === 'todos' }" @click="modoOper = 'todos'">Todos</button>
+                <button :class="{ on: modoOper === 'empresas' }" @click="modoOper = 'empresas'">Por empresas</button>
+              </div>
             </div>
           </div>
 
@@ -242,9 +248,12 @@
             <h3>📉 Recepciones y despachos por semana
               <small>{{ modoSemanal === 'total' ? '(recep. vs desp.)' : '(operación total por empresa)' }}</small>
             </h3>
-            <div class="toggle">
-              <button :class="{ on: modoSemanal === 'total' }" @click="modoSemanal = 'total'">Total</button>
-              <button :class="{ on: modoSemanal === 'empresas' }" @click="modoSemanal = 'empresas'">Por empresas</button>
+            <div class="ch-acc">
+              <button class="wms-ojo" title="¿Qué muestra este gráfico?" @click="doc = DOCS.semanal">👁</button>
+              <div class="toggle">
+                <button :class="{ on: modoSemanal === 'total' }" @click="modoSemanal = 'total'">Total</button>
+                <button :class="{ on: modoSemanal === 'empresas' }" @click="modoSemanal = 'empresas'">Por empresas</button>
+              </div>
             </div>
           </div>
           <div class="ley-empresas">
@@ -264,7 +273,7 @@
 
       <!-- ── Alertas operativas ── -->
       <section class="card alertas">
-        <h3>⚠️ Alertas operativas de stock</h3>
+        <div class="card-head"><h3>⚠️ Alertas operativas de stock</h3><button class="wms-ojo" title="¿Qué muestra este panel?" @click="doc = DOCS.alertas">👁</button></div>
         <div class="chips">
           <span class="chip chip-red">Vencidos: <b>{{ nf(data.alertas.resumen.vencidos) }}</b></span>
           <span class="chip chip-amber">Por vencer (180 d): <b>{{ nf(data.alertas.resumen.porVencer) }}</b></span>
@@ -367,6 +376,22 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Ojito: explicación de qué muestra cada gráfico -->
+    <Teleport to="body">
+      <div v-if="doc" class="es-modal-bg" @click.self="doc = null">
+        <div class="es-modal">
+          <div class="es-modal-h"><span>{{ doc.icono }} {{ doc.titulo }}</span><button class="es-x" @click="doc = null">✕</button></div>
+          <div class="es-modal-b">
+            <div class="es-doc"><div class="es-doc-k">📊 Qué mide</div><div class="es-doc-v">{{ doc.mide }}</div></div>
+            <div class="es-doc"><div class="es-doc-k">📅 Período</div><div class="es-doc-v">{{ doc.periodo }}</div></div>
+            <div class="es-doc"><div class="es-doc-k">🗂️ De dónde sale</div><div class="es-doc-v">{{ doc.fuente }}</div></div>
+            <div class="es-doc"><div class="es-doc-k">🧮 Cómo se calcula</div><div class="es-doc-v">{{ doc.calculo }}</div></div>
+            <div class="es-doc nota"><div class="es-doc-k">💡 Tener en cuenta</div><div class="es-doc-v">{{ doc.nota }}</div></div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -405,6 +430,22 @@ const fecha2 = ref(iso(hoy))
 const data = ref<any>(null)
 const cargando = ref(false)
 const error = ref('')
+
+// ── Ojito 👁 por gráfico: explicación de qué muestra y de dónde sale ──
+const doc = ref<any>(null)
+const DOCS: Record<string, any> = {
+  stockEmpresa: { icono: '📦', titulo: 'Stock por empresa', mide: 'Cuántas posiciones (ubicaciones ocupadas) tiene cada empresa/cliente en el depósito.', periodo: 'Foto del stock actual.', fuente: 'El stock actual del WMS (LOGIST_UNIVERSAL).', calculo: 'Se cuentan las posiciones (una por packing) agrupadas por empresa.', nota: 'Mide ocupación física; para volumen mirá el KPI Unidades.' },
+  stockEstado: { icono: '🏷️', titulo: 'Stock por estado', mide: 'Cuántas posiciones hay en cada estado: disponible, obsoleto, rechazado, bloqueado o muestra.', periodo: 'Foto del stock actual.', fuente: 'El estado de cada packing en el WMS.', calculo: 'Posiciones agrupadas por estado.', nota: 'Bloqueado y rechazado = stock inmovilizado.' },
+  tortaEmpresa: { icono: '🥧', titulo: 'Participación en el stock por empresa', mide: 'Qué % del depósito ocupa cada empresa/cliente (por posiciones).', periodo: 'Foto del stock actual.', fuente: 'El stock actual del WMS.', calculo: 'Posiciones de cada empresa sobre el total.', nota: 'Clave en un depósito multicliente: quién ocupa más espacio.' },
+  tortaEstado: { icono: '🩺', titulo: 'Salud del inventario (por estado)', mide: 'La proporción de stock disponible vs. inmovilizado (bloqueado / rechazado / obsoleto).', periodo: 'Foto del stock actual.', fuente: 'El estado de cada packing.', calculo: '% de posiciones por estado.', nota: 'Cuanto más rojo/naranja, más plata parada.' },
+  mueven: { icono: '🚚', titulo: 'Empresas que más mueven', mide: 'Qué empresa tiene más actividad (recepciones + despachos) en el período.', periodo: 'El rango de fechas elegido (Desde/Hasta).', fuente: 'Recepciones y despachos del WMS.', calculo: 'Se suman recepciones y despachos por empresa; la barra se divide en dos colores (azul recepciones, naranja despachos).', nota: 'Mide operación, no stock.' },
+  nave: { icono: '🏭', titulo: 'Ocupación por nave', mide: 'Cómo se reparte el stock físicamente entre las naves del depósito.', periodo: 'Foto del stock actual.', fuente: 'La ubicación (depósito → nave) de cada packing.', calculo: 'Posiciones por nave, apiladas por empresa. "(Sin ubicar)" = stock sin depósito asignado.', nota: 'Mucho "Sin ubicar" indica stock sin ubicación granular cargada.' },
+  antiguedad: { icono: '⏳', titulo: 'Antigüedad del stock', mide: 'Hace cuánto está el stock en el depósito, por tramos de días.', periodo: 'Foto del stock actual (días desde el ingreso).', fuente: 'La fecha de ingreso de cada packing.', calculo: 'Posiciones por tramo: 0-30, 31-90, 91-180 y +180 días.', nota: 'Clic en un tramo para ver qué productos son. +180 días = stock viejo/inmovilizado.' },
+  movimientos: { icono: '🔄', titulo: 'Movimientos de stock por mes', mide: 'Cuántos movimientos de stock (ingresos y egresos) hubo cada mes.', periodo: 'El rango elegido, por mes.', fuente: 'Los movimientos de stock del WMS.', calculo: 'Se cuentan los movimientos por mes, separando ingresos de egresos. Modo "Por empresas" apila por cliente.', nota: 'Cuenta movimientos, no unidades.' },
+  operacion: { icono: '🚚', titulo: 'Operación por mes', mide: 'Cuántas recepciones y despachos hubo cada mes.', periodo: 'El rango elegido, por mes.', fuente: 'Recepciones y despachos del WMS.', calculo: 'Se cuentan recepciones y despachos por mes. Modo "Por empresas" apila por cliente.', nota: 'Recepción = entra; despacho = sale.' },
+  semanal: { icono: '📉', titulo: 'Recepciones y despachos por semana', mide: 'La evolución semanal de recepciones y despachos en el tiempo.', periodo: 'El rango elegido, por semana (lunes).', fuente: 'Recepciones y despachos del WMS.', calculo: 'Se cuentan por semana. Modo "Total" = dos líneas (recep/desp); "Por empresas" = una línea por cliente.', nota: 'Sirve para ver tendencias más finas que el mensual.' },
+  alertas: { icono: '⚠️', titulo: 'Alertas operativas de stock', mide: 'Productos vencidos, próximos a vencer y stock bloqueado.', periodo: 'Foto del stock actual.', fuente: 'La fecha de vencimiento y el estado de cada packing.', calculo: 'Vencidos: venció antes de hoy. Por vencer: vence dentro de 180 días. Bloqueadas: estado bloqueado.', nota: 'Accioná sobre lo vencido/bloqueado para liberar stock.' },
+}
 
 // ── Geometría de gráficos ──
 const W = 360, WW = 720, H = 220, LH = 240
@@ -869,4 +910,19 @@ const { etiqueta } = useAutoRefresh(cargar)   // tablero en tiempo real: recarga
 .a-fec.pv { color: #b45309; font-weight: 600; }
 
 @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+
+/* Ojito por gráfico + modal de explicación */
+.wms-ojo { background: transparent; border: none; cursor: pointer; font-size: 1.05rem; line-height: 1; padding: 0.15rem 0.32rem; border-radius: 6px; opacity: 0.6; flex-shrink: 0; }
+.wms-ojo:hover { background: #f0faf4; opacity: 1; }
+.ch-acc { display: flex; align-items: center; gap: 0.5rem; }
+.es-modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,.55); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 18px; }
+.es-modal { width: min(520px, 96vw); max-height: 88vh; overflow: auto; background: #fff; border-radius: 12px; box-shadow: 0 24px 60px rgba(0,0,0,.4); }
+.es-modal-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; background: #1b4332; color: #fff; font-size: 15px; font-weight: 700; border-radius: 12px 12px 0 0; position: sticky; top: 0; }
+.es-x { background: transparent; border: none; color: #fff; font-size: 15px; cursor: pointer; }
+.es-modal-b { padding: 6px 16px 14px; }
+.es-doc { padding: 11px 0; border-bottom: 1px dashed #eef2f5; }
+.es-doc.nota { border-bottom: none; }
+.es-doc-k { font-size: 12px; font-weight: 700; color: #166534; margin-bottom: 3px; }
+.es-doc.nota .es-doc-k { color: #b45309; }
+.es-doc-v { font-size: 13.5px; color: #334155; line-height: 1.5; }
 </style>
