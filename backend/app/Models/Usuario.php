@@ -40,6 +40,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -148,7 +149,25 @@ class Usuario extends Authenticatable
      */
     public function routeNotificationForMail(): string
     {
-        return $this->email;
+        return (string) $this->email;
+    }
+
+    /**
+     * Mapeo email ↔ EMAIL.
+     *
+     * En sqlLOGIST (conexión 'gestion') la columna heredada de FoxPro se llama EMAIL
+     * (MAYÚSCULAS) y el driver la devuelve con ese nombre; Laravel/el código usan
+     * 'email' en minúscula. Se traduce acá (lectura y escritura) para que el email
+     * se lea y se guarde bien (login, recuperar clave, alta/edición de usuarios).
+     */
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value, array $attributes) => isset($attributes['EMAIL'])
+                ? (rtrim((string) $attributes['EMAIL']) ?: null)
+                : ($attributes['email'] ?? null),
+            set: fn ($value) => ['EMAIL' => $value !== null ? strtolower(trim($value)) : null],
+        );
     }
 
     /**
