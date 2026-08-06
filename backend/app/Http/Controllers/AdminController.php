@@ -143,8 +143,8 @@ class AdminController extends Controller
     {
         $request->validate([
             'NOMBRE'  => 'required|string|max:50',
-            'DATO1'   => 'required|string|max:20|unique:usuarios,DATO1',
-            'email'   => 'required|email|max:255|unique:usuarios,email',
+            'DATO1'   => 'required|string|max:20|unique:gestion.usuarios,DATO1',
+            'email'   => 'required|email|max:255|unique:gestion.usuarios,email',
             'NIVEL'   => 'required|integer',
             'EMPRESA' => 'nullable|string|max:100',
             'DOMICILIO' => 'nullable|string|max:100',
@@ -220,8 +220,11 @@ class AdminController extends Controller
 
         $request->validate([
             'NOMBRE'  => 'required|string|max:50',
-            'DATO1'   => ['required', 'string', 'max:20', Rule::unique('usuarios', 'DATO1')->ignore($codigo, 'CODIGO')],
-            'email'   => ['required', 'email', 'max:255', Rule::unique('usuarios', 'email')->ignore($codigo, 'CODIGO')],
+            // ⚠️ GERENCIAL: los usuarios viven en sqlLOGIST (conexión 'gestion'), NO en la
+            // base por defecto (sqlRRHHlog). Sin el prefijo 'gestion.' validaba contra RRHH
+            // y marcaba falsos "duplicados" (RRHH tiene otros usuarios/emails iguales).
+            'DATO1'   => ['required', 'string', 'max:20', Rule::unique('gestion.usuarios', 'DATO1')->ignore($codigo, 'CODIGO')],
+            'email'   => ['required', 'email', 'max:255', Rule::unique('gestion.usuarios', 'email')->ignore($codigo, 'CODIGO')],
             'NIVEL'   => 'required|integer',
             'EMPRESA' => 'nullable|string|max:100',
             'ESTADO'  => 'nullable|boolean',
