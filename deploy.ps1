@@ -37,8 +37,13 @@ foreach ($f in @('favicon.ico', 'favicon.png', 'favicon.svg')) {
     if (Test-Path $src) { Copy-Item $src (Join-Path $pubDir $f) -Force }
 }
 
-Write-Host "== 3) Limpiando cache de configuracion de Laravel ==" -ForegroundColor Cyan
-php (Join-Path $raiz 'backend\artisan') config:clear
+Write-Host "== 3) Limpiando cache de Laravel (config + rutas + app) ==" -ForegroundColor Cyan
+$artisan = Join-Path $raiz 'backend\artisan'
+php $artisan config:clear
+# route:clear es clave cuando el deploy agrega/renombra rutas (si estan cacheadas
+# con route:cache, las nuevas no se reconocen hasta limpiar).
+php $artisan route:clear
+php $artisan cache:clear
 
 $jsRef = (Select-String -Path (Join-Path $pubDir 'index.html') -Pattern 'assets/index-[^"]+\.js').Matches.Value
 $ok = if ($jsRef) { Test-Path (Join-Path $pubDir ($jsRef -replace '/','\')) } else { $false }
