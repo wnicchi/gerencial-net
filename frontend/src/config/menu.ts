@@ -24,6 +24,17 @@ export const menuConfig: MenuItem[] = [
       { id: 'tab-rrhh',    label: 'RRHH · Sueldos y Personal', icono: '📈', ruta: '/dashboard/estadisticas' },
       { id: 'tab-wms',     label: 'Stock · Logística (WMS)',   icono: '📦', ruta: '/dashboard/tablero-wms' },
       { id: 'tab-gestion-fact', label: 'Gestión · Pend. Facturación', icono: '💰', ruta: '/dashboard/pendiente-facturacion' },
+      {
+        id: 'tab-gestion-est', label: 'Gestión · Estadísticas', icono: '📊',
+        hijos: [
+          { id: 'gest-est-ventas',     label: 'Comparativa de Ventas',      icono: '📈', ruta: '/dashboard/gestion/comparativa-ventas' },
+          { id: 'gest-est-gastos',     label: 'Comparativa de Gastos',      icono: '📉', ruta: '/dashboard/gestion/comparativa-gastos' },
+          { id: 'gest-est-cobros',     label: 'Cobros y Pagos',             icono: '💵', ruta: '/dashboard/gestion/cobros-pagos' },
+          { id: 'gest-est-saldos',     label: 'Comparativo Saldos',         icono: '⚖️', ruta: '/dashboard/gestion/comparativo-saldos' },
+          { id: 'gest-est-utilidades', label: 'Comparativa de Utilidades',  icono: '🧮', ruta: '/dashboard/gestion/comparativa-utilidades' },
+          { id: 'gest-est-proy',       label: 'Proyecciones Financieras',   icono: '🔮', ruta: '/dashboard/gestion/proyecciones' },
+        ]
+      },
       { id: 's-tab-2', separador: true, label: '', icono: '' },
       { id: 'tab-alertas', label: 'Alertas',                   icono: '🔔', ruta: '/dashboard/alertas' },
     ]

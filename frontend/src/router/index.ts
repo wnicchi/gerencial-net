@@ -29,6 +29,13 @@ const router = createRouter({
         { path: 'alertas',       name: 'alertas',        component: () => import('@/views/AlertasView.vue') },
         // Gestión (Logística) · Pendiente de Facturación (base sqlLOGIST)
         { path: 'pendiente-facturacion', name: 'pendiente-facturacion', component: () => import('@/views/PendienteFacturacionView.vue') },
+        // Gestión (Logística) · Estadísticas (réplica de GESTION.NET, base sqlLOGIST)
+        { path: 'gestion/comparativa-ventas',     name: 'gestion-comparativa-ventas',     component: () => import('@/views/ComparativaVentasView.vue') },
+        { path: 'gestion/comparativa-gastos',     name: 'gestion-comparativa-gastos',     component: () => import('@/views/ComparativaGastosView.vue') },
+        { path: 'gestion/cobros-pagos',           name: 'gestion-cobros-pagos',           component: () => import('@/views/CobrosPagosView.vue') },
+        { path: 'gestion/comparativo-saldos',     name: 'gestion-comparativo-saldos',     component: () => import('@/views/ComparativoSaldosView.vue') },
+        { path: 'gestion/comparativa-utilidades', name: 'gestion-comparativa-utilidades', component: () => import('@/views/ComparativaUtilidadesView.vue') },
+        { path: 'gestion/proyecciones',           name: 'gestion-proyecciones',           component: () => import('@/views/ProyeccionesView.vue') },
 
         // ── Sistema / Seguridad (solo admin) ──
         { path: 'cambio-clave',    name: 'cambio-clave',    component: () => import('@/views/CambioClaveView.vue') },

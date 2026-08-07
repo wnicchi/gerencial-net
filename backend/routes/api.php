@@ -980,6 +980,15 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\VerificarPermisoModulo::
 
     // ── Tablero Gerencial · Gestión (Logística, base sqlLOGIST) ──
     Route::get   ('tablero/gestion/pendiente-facturacion', [\App\Http\Controllers\PendienteFacturacionController::class, 'index']);
+    // Estadísticas de Gestión (réplica de GESTION.NET, solo lectura sobre 'gestion')
+    Route::get   ('tablero/gestion/comparativa-ventas/catalogo',  [\App\Http\Controllers\ComparativaVentasController::class, 'catalogo']);
+    Route::get   ('tablero/gestion/comparativa-ventas',           [\App\Http\Controllers\ComparativaVentasController::class, 'calcular']);
+    Route::get   ('tablero/gestion/comparativa-gastos/catalogo',  [\App\Http\Controllers\ComparativaGastosController::class, 'catalogo']);
+    Route::get   ('tablero/gestion/comparativa-gastos',           [\App\Http\Controllers\ComparativaGastosController::class, 'calcular']);
+    Route::get   ('tablero/gestion/cobros-pagos',                 [\App\Http\Controllers\CobrosPagosController::class, 'calcular']);
+    Route::get   ('tablero/gestion/comparativo-saldos',           [\App\Http\Controllers\SaldosTiempoController::class, 'index']);
+    Route::get   ('tablero/gestion/comparativa-utilidades',       [\App\Http\Controllers\ComparativaUtilidadesController::class, 'calcular']);
+    Route::get   ('tablero/gestion/proyecciones',                 [\App\Http\Controllers\ProyeccionController::class, 'index']);
     Route::get   ('liquidaciones/consultar', [LiquidacionController::class, 'consultar']);
     Route::delete('liquidaciones',           [LiquidacionController::class, 'borrar']);
     Route::get   ('comparativa-liquidaciones', [ComparativaLiquidacionController::class, 'index']);
