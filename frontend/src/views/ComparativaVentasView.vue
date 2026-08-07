@@ -61,7 +61,7 @@
             <tr><th class="a">AÑO</th><th v-for="m in MESES" :key="m">{{ m }}</th><th class="t">Total Anual</th></tr>
           </thead>
           <tbody>
-            <tr v-for="it in inter" :key="it.detalle">
+            <tr v-for="it in interOrden" :key="it.detalle">
               <td class="a">{{ it.detalle }}</td>
               <td v-for="(v, i) in it.meses" :key="i" class="num" :class="{ neg: v < 0 }">{{ pct(v) }}</td>
               <td class="num t" :class="{ neg: it.total < 0 }">{{ pct(it.total) }}</td>
@@ -117,6 +117,8 @@ const incluyeIva = ref(false)
 
 const pres = ref<Fila[]>([])
 const inter = ref<Inter[]>([])
+// Interanual con el año más reciente arriba (orden descendente por año).
+const interOrden = computed(() => [...inter.value].sort((a, b) => parseInt(b.detalle) - parseInt(a.detalle)))
 const cargando = ref(false)
 const verGrafico = ref(false)
 const msg = ref(''); const msgErr = ref(false)
