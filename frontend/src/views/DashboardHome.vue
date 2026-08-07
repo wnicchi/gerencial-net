@@ -25,6 +25,25 @@
       </router-link>
     </div>
 
+    <!-- Estadísticas de Gestión: informes secundarios, en tarjetas más chicas. -->
+    <div class="sub">
+      <h2 class="sub-tit"><span class="sub-dot"></span>Gestión · Estadísticas</h2>
+      <div class="chips">
+        <router-link
+          v-for="e in estadisticas"
+          :key="e.ruta"
+          :to="e.ruta"
+          class="chip"
+        >
+          <span class="chip-tile">{{ e.ico }}</span>
+          <span class="chip-txt">
+            <b>{{ e.tit }}</b>
+            <small>{{ e.desc }}</small>
+          </span>
+        </router-link>
+      </div>
+    </div>
+
     <p class="home-foot">Fuentes en vivo: RRHH (sqlRRHHlog) · Stock/Logística (LOGIST_UNIVERSAL) · Gestión (sqlLOGIST). Solo lectura.</p>
   </div>
 </template>
@@ -38,6 +57,21 @@ const nombre = computed(() => {
   const n = auth.usuario?.NOMBRE || auth.usuario?.DATO1 || ''
   return n.split(' ')[0] || ''
 })
+
+/**
+ * Estadísticas de Gestión (informes secundarios del Resumen).
+ * Al incorporar un nuevo módulo de Gestión al tablero, agregar acá su chip
+ * (ícono + título + una línea de qué trata) para que aparezca en el Resumen
+ * con el mismo formato compacto.
+ */
+const estadisticas = [
+  { ruta: '/dashboard/gestion/comparativa-ventas',     ico: '📈', tit: 'Comparativa de Ventas',     desc: 'Ventas por mes/año y variación interanual.' },
+  { ruta: '/dashboard/gestion/comparativa-gastos',     ico: '📉', tit: 'Comparativa de Gastos',     desc: 'Gastos por rubro comparados mes a mes.' },
+  { ruta: '/dashboard/gestion/cobros-pagos',           ico: '💵', tit: 'Cobros y Pagos',            desc: 'Cobranzas contra pagos del período.' },
+  { ruta: '/dashboard/gestion/comparativo-saldos',     ico: '⚖️', tit: 'Comparativo de Saldos',     desc: 'Evolución de saldos en el tiempo.' },
+  { ruta: '/dashboard/gestion/comparativa-utilidades', ico: '🧮', tit: 'Comparativa de Utilidades', desc: 'Utilidad (ventas − gastos) por período.' },
+  { ruta: '/dashboard/gestion/proyecciones',           ico: '🔮', tit: 'Proyecciones Financieras',  desc: 'Proyección de ingresos y egresos.' },
+]
 </script>
 
 <style scoped>
@@ -70,6 +104,41 @@ const nombre = computed(() => {
 .card-ico { font-size: 2rem; line-height: 1; }
 .card-tit { color: #1e293b; font-size: 1.06rem; font-weight: 700; }
 .card-desc { color: #64748b; font-size: 0.88rem; line-height: 1.4; }
+
+/* ── Estadísticas de Gestión (secundarias, más chicas) ── */
+.sub { margin-top: 1.9rem; }
+.sub-tit {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin: 0 0 0.8rem; color: #64748b;
+  font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.sub-dot { width: 9px; height: 9px; border-radius: 50%; background: #eda100; flex: 0 0 auto; }
+.chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.65rem;
+}
+.chip {
+  display: flex; align-items: flex-start; gap: 0.65rem;
+  padding: 0.7rem 0.85rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+}
+.chip:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); border-color: #f0c56a; }
+.chip-tile {
+  flex: 0 0 auto;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  background: #fbeecb;
+  font-size: 1rem; line-height: 1;
+}
+.chip-txt { display: flex; flex-direction: column; min-width: 0; }
+.chip-txt b { color: #1e293b; font-size: 0.86rem; font-weight: 700; line-height: 1.25; }
+.chip-txt small { color: #64748b; font-size: 0.76rem; line-height: 1.3; margin-top: 2px; }
 
 .home-foot { margin-top: 1.8rem; color: #94a3b8; font-size: 0.8rem; }
 </style>
