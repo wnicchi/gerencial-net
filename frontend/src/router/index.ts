@@ -41,6 +41,8 @@ const router = createRouter({
         { path: 'gestion/compras-mensual',        name: 'gestion-compras-mensual',        component: () => import('@/views/ComprasMensualView.vue') },
         { path: 'gestion/ventas-mensual',         name: 'gestion-ventas-mensual',         component: () => import('@/views/VentasMensualView.vue') },
         { path: 'gestion/ccosto-mensual',         name: 'gestion-ccosto-mensual',         component: () => import('@/views/CentroCostoMensualView.vue') },
+        // Gestión (Logística) · Listados
+        { path: 'gestion/informe-contable',       name: 'gestion-informe-contable',       component: () => import('@/views/InformeContableView.vue') },
 
         // ── Sistema / Seguridad (solo admin) ──
         { path: 'cambio-clave',    name: 'cambio-clave',    component: () => import('@/views/CambioClaveView.vue') },

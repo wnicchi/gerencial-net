@@ -40,6 +40,12 @@ export const menuConfig: MenuItem[] = [
           { id: 'gest-est-proy-ie',    label: 'Proyección Ingresos y Egresos', icono: '📈', ruta: '/dashboard/gestion/proyeccion-ingresos-egresos' },
         ]
       },
+      {
+        id: 'tab-gestion-lst', label: 'Gestión · Listados', icono: '📋',
+        hijos: [
+          { id: 'gest-lst-inf-contable', label: 'Informe Contable de Ventas', icono: '📒', ruta: '/dashboard/gestion/informe-contable' },
+        ]
+      },
       { id: 's-tab-2', separador: true, label: '', icono: '' },
       { id: 'tab-alertas', label: 'Alertas',                   icono: '🔔', ruta: '/dashboard/alertas' },
     ]

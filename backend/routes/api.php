@@ -994,6 +994,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\VerificarPermisoModulo::
     Route::get   ('tablero/gestion/compras-mensual',              [\App\Http\Controllers\ComprasMensualController::class, 'index']);
     Route::get   ('tablero/gestion/ventas-mensual',               [\App\Http\Controllers\VentasMensualController::class, 'index']);
     Route::get   ('tablero/gestion/ccosto-mensual',               [\App\Http\Controllers\CentroCostoMensualController::class, 'index']);
+    // Listados de Gestión
+    Route::get   ('tablero/gestion/informe-contable',             [\App\Http\Controllers\InformeContableController::class, 'index']);
     Route::get   ('liquidaciones/consultar', [LiquidacionController::class, 'consultar']);
     Route::delete('liquidaciones',           [LiquidacionController::class, 'borrar']);
     Route::get   ('comparativa-liquidaciones', [ComparativaLiquidacionController::class, 'index']);
