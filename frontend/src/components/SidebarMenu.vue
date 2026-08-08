@@ -152,6 +152,11 @@ function isRutaActiva(ruta?: string) {
   return !!ruta && route.path === ruta
 }
 
+/** Un módulo es cualquier ruta que cuelga de /dashboard/ (el Resumen es /dashboard). */
+function esRutaDeModulo(ruta: string) {
+  return /^\/dashboard\/.+/.test(ruta)
+}
+
 function hijoActivoEn(items: MenuItem[]): boolean {
   return items.some(h => {
     if (h.ruta && route.path === h.ruta) return true
@@ -173,15 +178,19 @@ function encontrarSeccionDeRuta(ruta: string): MenuItem | null {
   return null
 }
 
-// ── Al cargar: abrir sección activa ──
+// ── Al cargar: abrir sección activa. Si se entra directo a un módulo (ruta con
+//    sub-path, no el Resumen), arrancar con el panel colapsado para ganar ancho. ──
 const seccionInicial = encontrarSeccionDeRuta(route.path)
 if (seccionInicial) seccionActiva.value = seccionInicial
+if (esRutaDeModulo(route.path)) panelOculto.value = true
 
-// ── Cuando cambia la ruta, actualizar sección activa (SIN forzar la apertura
-//    del panel: se preserva el estado abierto/colapsado que tenga el usuario). ──
+// ── Cuando cambia la ruta, actualizar sección activa y, al entrar a un módulo,
+//    colapsar el Panel 2 automáticamente (más ancho para el contenido). El rail
+//    de íconos queda para reabrirlo cuando el usuario quiera. ──
 watch(() => route.path, (nuevaRuta) => {
   const s = encontrarSeccionDeRuta(nuevaRuta)
   if (s) seccionActiva.value = s
+  if (esRutaDeModulo(nuevaRuta)) panelOculto.value = true
 })
 
 // ── Pedido externo de colapsar el panel (ej: buscador global de empleados) ──
