@@ -49,6 +49,7 @@
         <div class="p2-header">
           <span class="p2-icono">{{ seccionActiva.icono }}</span>
           <span class="p2-titulo" :title="seccionActiva.label">{{ seccionActiva.label }}</span>
+          <button class="p2-pin" :class="{ activo: fijado }" :title="fijado ? 'Menú fijo — clic para soltar' : 'Fijar menú abierto'" @click="togglePin">📌</button>
           <button class="p2-cerrar" title="Cerrar panel" @click="cerrarPanel2">✕</button>
         </div>
 
@@ -99,6 +100,9 @@ const router = useRouter()
 // ── Estado ──
 const seccionActiva = ref<MenuItem | null>(null)
 const panelOculto   = ref(false)
+// Menú fijo: si está activo, el Panel 2 NO se auto-colapsa al entrar a módulos.
+// Se recuerda entre sesiones.
+const fijado        = ref(localStorage.getItem('gerencial_menu_fijado') === '1')
 
 // ── Filtrado de secciones por permisos ──────────────────────────────────
 
@@ -182,7 +186,7 @@ function encontrarSeccionDeRuta(ruta: string): MenuItem | null {
 //    sub-path, no el Resumen), arrancar con el panel colapsado para ganar ancho. ──
 const seccionInicial = encontrarSeccionDeRuta(route.path)
 if (seccionInicial) seccionActiva.value = seccionInicial
-if (esRutaDeModulo(route.path)) panelOculto.value = true
+if (esRutaDeModulo(route.path) && !fijado.value) panelOculto.value = true
 
 // ── Cuando cambia la ruta, actualizar sección activa y, al entrar a un módulo,
 //    colapsar el Panel 2 automáticamente (más ancho para el contenido). El rail
@@ -190,7 +194,7 @@ if (esRutaDeModulo(route.path)) panelOculto.value = true
 watch(() => route.path, (nuevaRuta) => {
   const s = encontrarSeccionDeRuta(nuevaRuta)
   if (s) seccionActiva.value = s
-  if (esRutaDeModulo(nuevaRuta)) panelOculto.value = true
+  if (esRutaDeModulo(nuevaRuta) && !fijado.value) panelOculto.value = true
 })
 
 // ── Pedido externo de colapsar el panel (ej: buscador global de empleados) ──
@@ -220,6 +224,13 @@ function cerrarPanel2() {
 
 function togglePanel2() {
   panelOculto.value = !panelOculto.value
+}
+
+/** Fija/suelta el menú. Al fijar, lo deja abierto; se recuerda entre sesiones. */
+function togglePin() {
+  fijado.value = !fijado.value
+  localStorage.setItem('gerencial_menu_fijado', fijado.value ? '1' : '0')
+  if (fijado.value) panelOculto.value = false
 }
 
 async function cerrarSesion() {
@@ -402,6 +413,21 @@ async function cerrarSesion() {
   flex-shrink: 0;
 }
 .p2-cerrar:hover { color: #1b4332; background: #f0faf4; }
+
+.p2-pin {
+  background: transparent;
+  border: none;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+  border-radius: 4px;
+  opacity: 0.35;
+  filter: grayscale(1);
+  transition: opacity 0.15s, background 0.15s, filter 0.15s;
+  flex-shrink: 0;
+}
+.p2-pin:hover { opacity: 0.7; background: #f0faf4; }
+.p2-pin.activo { opacity: 1; filter: none; background: #d1fae5; }
 
 .p2-nav {
   flex: 1;
