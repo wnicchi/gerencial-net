@@ -6,6 +6,11 @@
         <h1>Comparativa de Gastos</h1>
         <p>Gastos (compras) por mes y año — variación interanual</p>
       </div>
+      <ModuloAyudaIA style="margin-left:auto" modulo="Comparativa de Gastos" icono="💸"
+        descripcion="Informe solo lectura de gastos (compras) por mes y año con la variación interanual (%). Filtro por rubro de compra y opción de mostrar en miles."
+        :sugerencias="['¿Qué mide este informe?', '¿Cómo leo la variación interanual?', '¿Qué es el rubro de compra?']"
+        intro="Muestra los gastos por mes y año, y cuánto variaron respecto del año anterior."
+        :pasos="['<b>Elegí</b> el rubro de compra.', '<b>Generá</b> el informe.', 'La segunda tabla muestra la variación % año contra año.']" />
     </div>
 
     <div class="cv-filtros">
@@ -80,6 +85,7 @@
  */
 import { ref, computed } from 'vue'
 import api from '@/services/auth'
+import ModuloAyudaIA from '@/components/ModuloAyudaIA.vue'
 import * as XLSX from 'xlsx'
 import { guardarDesdeUrl } from '@/utils/descargas'
 

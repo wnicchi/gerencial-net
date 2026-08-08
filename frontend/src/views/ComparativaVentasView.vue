@@ -6,6 +6,11 @@
         <h1>Comparativa de Ventas</h1>
         <p>Ventas por mes y año — variación interanual</p>
       </div>
+      <ModuloAyudaIA style="margin-left:auto" modulo="Comparativa de Ventas" icono="📈"
+        descripcion="Informe solo lectura de ventas por mes y año con la variación interanual (%). Filtros: rubro, moneda (pesos o dólares) e IVA. Las notas de crédito restan; en dólares divide por la cotización."
+        :sugerencias="['¿Qué compara este informe?', '¿Cómo se calcula la variación interanual?', '¿Qué pasa con las notas de crédito?']"
+        intro="Muestra las ventas por mes y año, y cuánto variaron respecto del año anterior."
+        :pasos="['<b>Elegí</b> rubro, moneda e IVA.', '<b>Generá</b> el informe.', 'La segunda tabla muestra la variación % de un año contra el anterior.']" />
     </div>
 
     <!-- Filtros -->
@@ -96,6 +101,7 @@
  */
 import { ref, computed } from 'vue'
 import api from '@/services/auth'
+import ModuloAyudaIA from '@/components/ModuloAyudaIA.vue'
 import * as XLSX from 'xlsx'
 import { guardarDesdeUrl } from '@/utils/descargas'
 

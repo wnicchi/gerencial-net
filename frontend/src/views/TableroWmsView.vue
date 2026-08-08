@@ -24,6 +24,11 @@
       </button>
       <button class="btn-print" @click="imprimirPDF" :disabled="!data || cargando || generandoPdf" title="Ver PDF (previsualizar, descargar o imprimir)">{{ generandoPdf ? '⟳…' : '🖨 Imprimir PDF' }}</button>
       <span class="alcance" v-if="data">{{ data.empresaNombre }}</span>
+      <ModuloAyudaIA modulo="Stock · Logística (WMS)" icono="📦"
+        descripcion="Tablero solo lectura del stock y la operación del WMS (LOGIST_UNIVERSAL), multicliente por unidad de negocio: stock por empresa y estado, ocupación de naves, antigüedad, movimientos y actividad. Filtros por empresa y rango de fechas."
+        :sugerencias="['¿Qué muestran estos gráficos?', '¿Qué es el filtro por empresa/cliente?', '¿Qué significan los estados del stock?']"
+        intro="Consolida el stock y la operación logística, por empresa/cliente y en total global."
+        :pasos="['<b>Elegí</b> empresa y rango de fechas.', '<b>Actualizá</b> para traer los datos.', 'Cada gráfico tiene un 👁 que explica qué muestra.']" />
       <RefreshTimer :label="etiqueta" />
     </div>
 
@@ -402,6 +407,7 @@ import jsPDF from 'jspdf'
 import { guardarDesdeUrl } from '@/utils/descargas'
 import { useAutoRefresh } from '@/composables/useAutoRefresh'
 import RefreshTimer from '@/components/RefreshTimer.vue'
+import ModuloAyudaIA from '@/components/ModuloAyudaIA.vue'
 
 // Paleta categórica validada (skill dataviz).
 const C = { c1: '#2a78d6', c2: '#eb6834', c3: '#1baf7a', c4: '#eda100', c8: '#e34948' }

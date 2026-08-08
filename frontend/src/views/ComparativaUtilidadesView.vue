@@ -6,6 +6,11 @@
         <h1>Comparativa de Utilidades</h1>
         <p>Utilidad (ventas − gastos) por mes y año — variación interanual</p>
       </div>
+      <ModuloAyudaIA style="margin-left:auto" modulo="Comparativa de Utilidades" icono="📈"
+        descripcion="Informe solo lectura de la utilidad (ventas menos gastos) por mes y año, con la variación interanual (%). Opción de incluir IVA en las ventas."
+        :sugerencias="['¿Cómo se calcula la utilidad?', '¿Qué cambia si incluyo IVA?', '¿Cómo leo la variación interanual?']"
+        intro="Muestra la utilidad (ventas − gastos) por mes y año, y su variación respecto del año anterior."
+        :pasos="['<b>Elegí</b> si incluir IVA.', '<b>Generá</b> el informe.', 'La segunda tabla muestra la variación % año contra año.']" />
     </div>
 
     <div class="cv-filtros">
@@ -69,6 +74,7 @@
  */
 import { ref, computed } from 'vue'
 import api from '@/services/auth'
+import ModuloAyudaIA from '@/components/ModuloAyudaIA.vue'
 import * as XLSX from 'xlsx'
 import { guardarDesdeUrl } from '@/utils/descargas'
 

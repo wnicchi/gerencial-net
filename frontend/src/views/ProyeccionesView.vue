@@ -6,6 +6,11 @@
         <h1>Proyecciones Financieras Mensual</h1>
         <p>Flujo proyectado por concepto — 4 semanas</p>
       </div>
+      <ModuloAyudaIA style="margin-left:auto" modulo="Proyecciones Financieras Mensual" icono="💰"
+        descripcion="Informe solo lectura del flujo proyectado por concepto (ingresos a cobrar y egresos a pagar) para las próximas semanas."
+        :sugerencias="['¿Qué proyecta este informe?', '¿De dónde salen los importes?', '¿Cómo leo el flujo por concepto?']"
+        intro="Proyecta el flujo de fondos por concepto para las próximas 4 semanas."
+        :pasos="['<b>Generá</b> el informe.', 'Revisá los importes por concepto y semana.', '<b>Informe</b> imprime el resultado.']" />
       <div class="pf-acc">
         <button class="pf-btn" :disabled="cargando" @click="cargar">↻ Generar Informe</button>
         <button v-if="filas.length" class="pf-btn" @click="imprimir">🖨 Informe</button>
@@ -94,6 +99,7 @@
  */
 import { ref, computed } from 'vue'
 import api from '@/services/auth'
+import ModuloAyudaIA from '@/components/ModuloAyudaIA.vue'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import { guardarDesdeUrl } from '@/utils/descargas'

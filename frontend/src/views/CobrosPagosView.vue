@@ -6,6 +6,11 @@
         <h1>Estadística Cobros y Pagos</h1>
         <p>Promedio de días (ponderado por importe) — ventana móvil de 12 meses</p>
       </div>
+      <ModuloAyudaIA style="margin-left:auto" modulo="Estadística Cobros y Pagos" icono="📅"
+        descripcion="Informe solo lectura del promedio de días de cobro y de pago, ponderado por importe, sobre una ventana móvil de 12 meses."
+        :sugerencias="['¿Qué mide este informe?', '¿Qué significa ponderado por importe?', '¿Para qué sirve comparar cobros y pagos?']"
+        intro="Muestra en cuántos días, en promedio, se cobra y se paga."
+        :pasos="['<b>Elegí</b> el mes y año de corte.', '<b>Generá</b> el informe.', 'Comparás los días promedio de cobro contra los de pago.']" />
     </div>
 
     <div class="cp-filtros">
@@ -65,6 +70,7 @@
  */
 import { ref, computed } from 'vue'
 import api from '@/services/auth'
+import ModuloAyudaIA from '@/components/ModuloAyudaIA.vue'
 import * as XLSX from 'xlsx'
 import { guardarDesdeUrl } from '@/utils/descargas'
 

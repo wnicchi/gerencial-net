@@ -6,6 +6,11 @@
         <p class="pf-sub">Gestión (Logística) — montos por facturar: contratos, transportes y servicios.</p>
       </div>
       <div class="pf-acc">
+        <ModuloAyudaIA modulo="Pendiente de Facturación" icono="🧾"
+          descripcion="Informe solo lectura de los montos por facturar de Gestión Logística: contratos, transportes y servicios, por cliente, con total y desglose."
+          :sugerencias="['¿Qué incluye este informe?', '¿Qué son contratos, transportes y servicios?', '¿Cómo leo el ranking por cliente?']"
+          intro="Muestra cuánto queda por facturar, sumando contratos, transportes y servicios."
+          :pasos="['<b>Actualizá</b> para traer los datos.', 'Mirá el total y el desglose por tipo.', 'El detalle por cliente se puede ordenar por columna.']" />
         <RefreshTimer :label="etiqueta" />
         <button class="btn-refresh" @click="cargar" :disabled="cargando">{{ cargando ? 'Cargando…' : '↻ Actualizar' }}</button>
         <button class="btn-print" @click="imprimirPDF" :disabled="!data || cargando || generandoPdf">{{ generandoPdf ? '⟳…' : '🖨 Imprimir PDF' }}</button>
@@ -111,6 +116,7 @@ import jsPDF from 'jspdf'
 import { guardarDesdeUrl } from '@/utils/descargas'
 import { useAutoRefresh } from '@/composables/useAutoRefresh'
 import RefreshTimer from '@/components/RefreshTimer.vue'
+import ModuloAyudaIA from '@/components/ModuloAyudaIA.vue'
 
 const C = { c1: '#2a78d6', c2: '#eb6834', c3: '#1baf7a' }
 const nfInt = new Intl.NumberFormat('es-AR')

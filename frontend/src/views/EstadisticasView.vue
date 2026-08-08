@@ -9,6 +9,11 @@
     <div class="es-cab">
       <div class="es-ico">📊</div>
       <div class="es-tx"><h1>Tablero Gerencial</h1><p>Estadísticas de RRHH para la toma de decisiones</p></div>
+      <ModuloAyudaIA modulo="Estadísticas de RRHH" icono="📊"
+        descripcion="Tablero solo lectura de RRHH: masa salarial, dotación (altas y bajas), horas extras, ausentismo y composición del personal, con desgloses."
+        :sugerencias="['¿Qué muestran estos gráficos?', '¿Qué es la masa salarial?', '¿Cómo leo la dotación y el ausentismo?']"
+        intro="Consolida los indicadores de RRHH (sueldos y personal) para la toma de decisiones."
+        :pasos="['Recorré los gráficos de sueldos, dotación, horas extras y ausentismo.', 'Varios permiten ver el desglose por empleado.', '<b>Exportar</b> baja los datos a Excel o PDF.']" />
       <RefreshTimer :label="etiqueta" />
       <button class="es-pdf" :disabled="!datos || generandoPdf" @click="imprimirPDF">{{ generandoPdf ? '⟳…' : '🖨 Imprimir PDF' }}</button>
       <button class="es-exp" :disabled="!datos" @click="exportarExcel">📊 Exportar Excel</button>
@@ -388,6 +393,7 @@ import jsPDF from 'jspdf'
 import { guardarComo, guardarDesdeUrl } from '@/utils/descargas'
 import { useAutoRefresh } from '@/composables/useAutoRefresh'
 import RefreshTimer from '@/components/RefreshTimer.vue'
+import ModuloAyudaIA from '@/components/ModuloAyudaIA.vue'
 
 // ── Geometría base de los gráficos ──
 const W = 560, H = 260, PL = 48, PR = 16, PT = 14, PB = 26

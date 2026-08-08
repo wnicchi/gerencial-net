@@ -6,6 +6,11 @@
         <h1>Comparativo Saldos en el Tiempo</h1>
         <p>Saldos de cuenta corriente por antigüedad, mes a mes</p>
       </div>
+      <ModuloAyudaIA style="margin-left:auto" modulo="Comparativo Saldos en el Tiempo" icono="📊"
+        descripcion="Informe solo lectura de los saldos de cuenta corriente por antigüedad, mes a mes, para ver cómo evolucionan en el tiempo."
+        :sugerencias="['¿Qué muestra este comparativo?', '¿Qué es la antigüedad del saldo?', '¿Cómo interpreto la evolución?']"
+        intro="Muestra cómo se mueven los saldos de cuenta corriente a lo largo de los meses."
+        :pasos="['<b>Actualizá</b> para traer los datos.', 'Recorré las columnas de meses para ver la evolución.', '<b>Excel</b> exporta la tabla.']" />
       <div class="cs-acc">
         <button class="cs-btn" :disabled="cargando" @click="cargar">↻ Actualizar</button>
         <button v-if="filas.length" class="cs-btn" @click="aExcel">📊 Excel</button>
@@ -54,6 +59,7 @@
  */
 import { ref, computed } from 'vue'
 import api from '@/services/auth'
+import ModuloAyudaIA from '@/components/ModuloAyudaIA.vue'
 import * as XLSX from 'xlsx'
 import { guardarDesdeUrl } from '@/utils/descargas'
 
