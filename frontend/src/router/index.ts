@@ -36,6 +36,11 @@ const router = createRouter({
         { path: 'gestion/comparativo-saldos',     name: 'gestion-comparativo-saldos',     component: () => import('@/views/ComparativoSaldosView.vue') },
         { path: 'gestion/comparativa-utilidades', name: 'gestion-comparativa-utilidades', component: () => import('@/views/ComparativaUtilidadesView.vue') },
         { path: 'gestion/proyecciones',           name: 'gestion-proyecciones',           component: () => import('@/views/ProyeccionesView.vue') },
+        { path: 'gestion/proyeccion-grafica',     name: 'gestion-proyeccion-grafica',     component: () => import('@/views/ProyeccionGraficaView.vue') },
+        { path: 'gestion/proyeccion-ingresos-egresos', name: 'gestion-proyeccion-ie',     component: () => import('@/views/ProyeccionIngresosEgresosView.vue') },
+        { path: 'gestion/compras-mensual',        name: 'gestion-compras-mensual',        component: () => import('@/views/ComprasMensualView.vue') },
+        { path: 'gestion/ventas-mensual',         name: 'gestion-ventas-mensual',         component: () => import('@/views/VentasMensualView.vue') },
+        { path: 'gestion/ccosto-mensual',         name: 'gestion-ccosto-mensual',         component: () => import('@/views/CentroCostoMensualView.vue') },
 
         // ── Sistema / Seguridad (solo admin) ──
         { path: 'cambio-clave',    name: 'cambio-clave',    component: () => import('@/views/CambioClaveView.vue') },

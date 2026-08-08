@@ -32,7 +32,12 @@ export const menuConfig: MenuItem[] = [
           { id: 'gest-est-cobros',     label: 'Cobros y Pagos',             icono: '💵', ruta: '/dashboard/gestion/cobros-pagos' },
           { id: 'gest-est-saldos',     label: 'Comparativo Saldos',         icono: '⚖️', ruta: '/dashboard/gestion/comparativo-saldos' },
           { id: 'gest-est-utilidades', label: 'Comparativa de Utilidades',  icono: '🧮', ruta: '/dashboard/gestion/comparativa-utilidades' },
+          { id: 'gest-est-compras',    label: 'Estadística Mensual de Compras', icono: '🛒', ruta: '/dashboard/gestion/compras-mensual' },
+          { id: 'gest-est-ventas-m',   label: 'Estadística Mensual de Ventas',  icono: '💲', ruta: '/dashboard/gestion/ventas-mensual' },
+          { id: 'gest-est-ccosto',     label: 'Estadística por Centro de Costo', icono: '🏭', ruta: '/dashboard/gestion/ccosto-mensual' },
           { id: 'gest-est-proy',       label: 'Proyecciones Financieras',   icono: '🔮', ruta: '/dashboard/gestion/proyecciones' },
+          { id: 'gest-est-proy-graf',  label: 'Proyección Gráfica Mensual', icono: '📊', ruta: '/dashboard/gestion/proyeccion-grafica' },
+          { id: 'gest-est-proy-ie',    label: 'Proyección Ingresos y Egresos', icono: '📈', ruta: '/dashboard/gestion/proyeccion-ingresos-egresos' },
         ]
       },
       { id: 's-tab-2', separador: true, label: '', icono: '' },

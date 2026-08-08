@@ -70,7 +70,12 @@ const estadisticas = [
   { ruta: '/dashboard/gestion/cobros-pagos',           ico: '💵', tit: 'Cobros y Pagos',            desc: 'Cobranzas contra pagos del período.' },
   { ruta: '/dashboard/gestion/comparativo-saldos',     ico: '⚖️', tit: 'Comparativo de Saldos',     desc: 'Evolución de saldos en el tiempo.' },
   { ruta: '/dashboard/gestion/comparativa-utilidades', ico: '🧮', tit: 'Comparativa de Utilidades', desc: 'Utilidad (ventas − gastos) por período.' },
+  { ruta: '/dashboard/gestion/compras-mensual',        ico: '🛒', tit: 'Estadística de Compras',    desc: 'Compras por rubro, ventana móvil 12 meses.' },
+  { ruta: '/dashboard/gestion/ventas-mensual',         ico: '💲', tit: 'Estadística de Ventas',     desc: 'Ventas por rubro, ventana móvil 12 meses.' },
+  { ruta: '/dashboard/gestion/ccosto-mensual',         ico: '🏭', tit: 'Centros de Costo',          desc: 'Gastos por centro de costo, mensual.' },
   { ruta: '/dashboard/gestion/proyecciones',           ico: '🔮', tit: 'Proyecciones Financieras',  desc: 'Proyección de ingresos y egresos.' },
+  { ruta: '/dashboard/gestion/proyeccion-grafica',     ico: '📊', tit: 'Proyección Gráfica Mensual', desc: 'Total proyectado por día, próximas semanas.' },
+  { ruta: '/dashboard/gestion/proyeccion-ingresos-egresos', ico: '📈', tit: 'Proyección Ingresos y Egresos', desc: 'Ingresos a cobrar vs egresos a pagar.' },
 ]
 </script>
 

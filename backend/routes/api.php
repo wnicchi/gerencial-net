@@ -239,6 +239,7 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\VerificarPermisoModulo::
     // ASISTENTE IA — módulo Empleados
     // ══════════════════════════════════════════════════════════
     Route::post('ia/ayuda',        [IaController::class, 'ayuda']);
+    Route::post('ia/modulo',       [IaController::class, 'modulo']); // Asistente IA genérico por módulo (regla general del tablero)
     Route::post('ia/empleados',    [IaController::class, 'empleados']);
     Route::post('ia/estado-civil', [IaController::class, 'estadoCivil']);
     Route::post('ia/listados',     [IaController::class, 'listados']);
@@ -989,6 +990,10 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\VerificarPermisoModulo::
     Route::get   ('tablero/gestion/comparativo-saldos',           [\App\Http\Controllers\SaldosTiempoController::class, 'index']);
     Route::get   ('tablero/gestion/comparativa-utilidades',       [\App\Http\Controllers\ComparativaUtilidadesController::class, 'calcular']);
     Route::get   ('tablero/gestion/proyecciones',                 [\App\Http\Controllers\ProyeccionController::class, 'index']);
+    Route::get   ('tablero/gestion/proyecciones-semanal',         [\App\Http\Controllers\ProyeccionSemanalController::class, 'index']);
+    Route::get   ('tablero/gestion/compras-mensual',              [\App\Http\Controllers\ComprasMensualController::class, 'index']);
+    Route::get   ('tablero/gestion/ventas-mensual',               [\App\Http\Controllers\VentasMensualController::class, 'index']);
+    Route::get   ('tablero/gestion/ccosto-mensual',               [\App\Http\Controllers\CentroCostoMensualController::class, 'index']);
     Route::get   ('liquidaciones/consultar', [LiquidacionController::class, 'consultar']);
     Route::delete('liquidaciones',           [LiquidacionController::class, 'borrar']);
     Route::get   ('comparativa-liquidaciones', [ComparativaLiquidacionController::class, 'index']);

@@ -861,6 +861,33 @@ $lista
 PROMPT;
     }
 
+    /**
+     * @route POST /api/ia/modulo
+     * Asistente GENÉRICO por módulo (regla general del Tablero Gerencial): el frontend
+     * manda en 'contexto' la descripción funcional del módulo y se arma el system prompt
+     * al vuelo. Así cada módulo nuevo suma su botón IA sin tocar el backend.
+     */
+    public function modulo(Request $request): JsonResponse
+    {
+        return $this->responder($request, $this->systemPromptModulo((string) $request->input('contexto', '')));
+    }
+
+    private function systemPromptModulo(string $desc): string
+    {
+        $c = $this->confidencialidad();
+        $d = trim($desc) !== '' ? trim($desc) : 'Respondé de forma general sobre el Tablero Gerencial.';
+        return <<<PROMPT
+Sos un asistente de un módulo del TABLERO GERENCIAL, una app de análisis gerencial (solo lectura) que consolida estadísticas de RRHH, Stock/Logística (WMS) y Gestión Logística (ventas, compras, cobros/pagos, saldos, utilidades y proyecciones financieras). Respondés SIEMPRE en español rioplatense (voseo), claro y conciso. No inventes datos ni funciones que no existan.
+
+{$c}
+
+# Qué hace el módulo (para que VOS entiendas; no transcribir tecnicismos)
+{$d}
+
+Ayudá al gerente a entender y leer este informe. Si preguntan por otro módulo, aclaralo brevemente.
+PROMPT;
+    }
+
     private function responder(Request $request, string $system): JsonResponse
     {
         $request->validate([
