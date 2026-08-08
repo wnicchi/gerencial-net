@@ -35,7 +35,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(f, idx) in filas" :key="f.codigo" :class="{ alt: idx % 2 === 1 }">
+          <tr v-for="(f, idx) in filasOrden" :key="f.codigo" :class="{ alt: idx % 2 === 1 }">
             <td class="rub">{{ f.codigo }}</td><td class="det">{{ f.nombre }}</td>
             <td v-for="(v, i) in f.montos" :key="i" class="num" :class="{ neg: v < 0 }">{{ v ? money(v) : '' }}</td>
             <td class="num tot">{{ money(f.total) }}</td>
@@ -61,7 +61,7 @@
  * Matriz rubro × 12 meses (ventana móvil) con Total Anual y Porcentaje; el valor
  * usa la lógica fiscal por comprobante. Migra estadistica_ventas_mensual.scx.
  */
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import api from '@/services/auth'
 import * as XLSX from 'xlsx'
 import { guardarDesdeUrl } from '@/utils/descargas'
@@ -74,6 +74,8 @@ const mes = ref(hoy.getMonth() + 1)
 const anio = ref(hoy.getFullYear())
 const meses = ref<string[]>([])
 const filas = ref<Fila[]>([])
+// Grilla ordenada alfabéticamente por Descripción (nombre del rubro).
+const filasOrden = computed(() => [...filas.value].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')))
 const total = ref<{ montos: number[]; total: number; porcentaje: number }>({ montos: [], total: 0, porcentaje: 0 })
 const cargando = ref(false)
 const msg = ref('')
@@ -118,7 +120,7 @@ cargar()
 .msg-enter-active, .msg-leave-active { transition: opacity .25s; } .msg-enter-from, .msg-leave-to { opacity: 0; }
 .vm-load { margin-top: 16px; color: #64748b; font-size: 13px; }
 .vm-vacio { margin-top: 40px; text-align: center; color: #94a3b8; font-size: 14px; }
-.vm-scroll { overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 14px; }
+.vm-scroll { overflow: auto; max-height: calc(100vh - 215px); border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 14px; }
 .vm-tabla { width: 100%; border-collapse: collapse; font-size: 11.5px; white-space: nowrap; }
 .vm-tabla th { position: sticky; top: 0; background: #cfe8cf; color: #14532d; padding: 5px 8px; text-align: right; font-weight: 700; border-bottom: 1px solid #a7d3a7; }
 .vm-tabla th.rub, .vm-tabla th.det { text-align: left; }

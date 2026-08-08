@@ -56,7 +56,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(f, idx) in filas" :key="f.codigo + '-' + f.tipo" :class="{ alt: idx % 2 === 1 }">
+          <tr v-for="(f, idx) in filasOrden" :key="f.codigo + '-' + f.tipo" :class="{ alt: idx % 2 === 1 }">
             <td class="det">{{ f.nombre }} <span class="cm-cod">({{ f.codigo }})</span></td>
             <td class="tip"><span class="cm-badge" :class="f.tipo === 'VENTAS' ? 'v' : 'c'">{{ f.tipo }}</span></td>
             <td v-for="(v, i) in f.montos" :key="i" class="num" :class="{ neg: v < 0 }">{{ v ? money(v) : '' }}</td>
@@ -83,7 +83,7 @@
  * Matriz (centro, tipo) × 12 meses con filtros de moneda, tipo y centro. Total Anual + %.
  * Migra estadistica_compras_ccostos_mensual.scx.
  */
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import api from '@/services/auth'
 import * as XLSX from 'xlsx'
 import { guardarDesdeUrl } from '@/utils/descargas'
@@ -99,6 +99,9 @@ const tipo = ref<'T' | 'C' | 'V'>('T')
 const ccosto = ref(0)
 const meses = ref<string[]>([])
 const filas = ref<Fila[]>([])
+// Grilla ordenada alfabéticamente por Descripción (nombre del centro), luego por tipo.
+const filasOrden = computed(() => [...filas.value].sort(
+  (a, b) => a.nombre.localeCompare(b.nombre, 'es') || a.tipo.localeCompare(b.tipo)))
 const total = ref<{ montos: number[]; total: number }>({ montos: [], total: 0 })
 const mostrarTotal = ref(false)
 const catalogo = ref<{ codigo: number; nombre: string }[]>([])
@@ -162,7 +165,7 @@ cargar()
 .msg-enter-active, .msg-leave-active { transition: opacity .25s; } .msg-enter-from, .msg-leave-to { opacity: 0; }
 .cm-load { margin-top: 16px; color: #64748b; font-size: 13px; }
 .cm-vacio { margin-top: 40px; text-align: center; color: #94a3b8; font-size: 14px; }
-.cm-scroll { overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 14px; }
+.cm-scroll { overflow: auto; max-height: calc(100vh - 215px); border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 14px; }
 .cm-tabla { width: 100%; border-collapse: collapse; font-size: 11.5px; white-space: nowrap; }
 .cm-tabla th { position: sticky; top: 0; background: #cfe8cf; color: #14532d; padding: 5px 8px; text-align: right; font-weight: 700; border-bottom: 1px solid #a7d3a7; }
 .cm-tabla th.det, .cm-tabla th.tip { text-align: left; }
