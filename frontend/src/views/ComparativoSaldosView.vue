@@ -31,7 +31,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(f, i) in filas" :key="i" :class="{ alt: i % 2 === 1 }">
+            <tr v-for="(f, i) in filasOrden" :key="i" :class="{ alt: i % 2 === 1 }">
               <td class="a c">{{ f.mes }}</td><td class="a c">{{ f.anio }}</td>
               <td class="num">{{ money(f.m360) }}</td><td class="num">{{ money(f.m180) }}</td><td class="num">{{ money(f.m120) }}</td>
               <td class="num">{{ money(f.m090) }}</td><td class="num">{{ money(f.m060) }}</td><td class="num">{{ money(f.m030) }}</td><td class="num">{{ money(f.u030) }}</td>
@@ -78,6 +78,9 @@ const BUCKETS = [
 const MES_ABR = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic']
 
 const filas = ref<Fila[]>([])
+// Grilla con el último período arriba (orden descendente por año y mes).
+// El gráfico y el Excel se dejan en orden cronológico.
+const filasOrden = computed(() => [...filas.value].sort((a, b) => b.anio - a.anio || b.mes - a.mes))
 const cargando = ref(false)
 const msg = ref('')
 
