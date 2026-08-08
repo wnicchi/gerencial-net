@@ -26,7 +26,7 @@
         <table class="cv-tabla">
           <thead><tr><th class="a">AÑO</th><th v-for="m in MESES" :key="m">{{ m }}</th><th class="t">Total Anual</th></tr></thead>
           <tbody>
-            <tr v-for="p in pres" :key="p.anio">
+            <tr v-for="p in presOrden" :key="p.anio">
               <td class="a">{{ p.anio }}</td>
               <td v-for="(v, i) in p.meses" :key="i" class="num" :class="{ rojo: v < 0 }">{{ ent(v) }}</td>
               <td class="num t" :class="{ rojo: p.total < 0 }">{{ ent(p.total) }}</td>
@@ -87,6 +87,8 @@ const pres = ref<Fila[]>([])
 const inter = ref<Inter[]>([])
 // Comparación interanual con el año más reciente arriba (orden descendente por año).
 const interOrden = computed(() => [...inter.value].sort((a, b) => parseInt(b.detalle) - parseInt(a.detalle)))
+// Grilla mensual con el año más reciente arriba (orden descendente por año).
+const presOrden = computed(() => [...pres.value].sort((a, b) => b.anio - a.anio))
 const cargando = ref(false)
 const verGrafico = ref(false)
 const msg = ref('')
