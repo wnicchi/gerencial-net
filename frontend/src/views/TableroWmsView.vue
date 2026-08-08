@@ -25,7 +25,7 @@
       <button class="btn-print" @click="imprimirPDF" :disabled="!data || cargando || generandoPdf" title="Ver PDF (previsualizar, descargar o imprimir)">{{ generandoPdf ? '⟳…' : '🖨 Imprimir PDF' }}</button>
       <span class="alcance" v-if="data">{{ data.empresaNombre }}</span>
       <ModuloAyudaIA modulo="Stock · Logística (WMS)" icono="📦"
-        descripcion="Tablero solo lectura del stock y la operación del WMS (LOGIST_UNIVERSAL), multicliente por unidad de negocio: stock por empresa y estado, ocupación de naves, antigüedad, movimientos y actividad. Filtros por empresa y rango de fechas."
+        descripcion="Tablero solo lectura del stock y la operación del WMS, multicliente por unidad de negocio: stock por empresa y estado, ocupación de naves, antigüedad, movimientos y actividad. Filtros por empresa y rango de fechas."
         :sugerencias="['¿Qué muestran estos gráficos?', '¿Qué es el filtro por empresa/cliente?', '¿Qué significan los estados del stock?']"
         intro="Consolida el stock y la operación logística, por empresa/cliente y en total global."
         :pasos="['<b>Elegí</b> empresa y rango de fechas.', '<b>Actualizá</b> para traer los datos.', 'Cada gráfico tiene un 👁 que explica qué muestra.']" />
@@ -440,7 +440,7 @@ const error = ref('')
 // ── Ojito 👁 por gráfico: explicación de qué muestra y de dónde sale ──
 const doc = ref<any>(null)
 const DOCS: Record<string, any> = {
-  stockEmpresa: { icono: '📦', titulo: 'Stock por empresa', mide: 'Cuántas posiciones (ubicaciones ocupadas) tiene cada empresa/cliente en el depósito.', periodo: 'Foto del stock actual.', fuente: 'El stock actual del WMS (LOGIST_UNIVERSAL).', calculo: 'Se cuentan las posiciones (una por packing) agrupadas por empresa.', nota: 'Mide ocupación física; para volumen mirá el KPI Unidades.' },
+  stockEmpresa: { icono: '📦', titulo: 'Stock por empresa', mide: 'Cuántas posiciones (ubicaciones ocupadas) tiene cada empresa/cliente en el depósito.', periodo: 'Foto del stock actual.', fuente: 'El stock actual del WMS.', calculo: 'Se cuentan las posiciones (una por packing) agrupadas por empresa.', nota: 'Mide ocupación física; para volumen mirá el KPI Unidades.' },
   stockEstado: { icono: '🏷️', titulo: 'Stock por estado', mide: 'Cuántas posiciones hay en cada estado: disponible, obsoleto, rechazado, bloqueado o muestra.', periodo: 'Foto del stock actual.', fuente: 'El estado de cada packing en el WMS.', calculo: 'Posiciones agrupadas por estado.', nota: 'Bloqueado y rechazado = stock inmovilizado.' },
   tortaEmpresa: { icono: '🥧', titulo: 'Participación en el stock por empresa', mide: 'Qué % del depósito ocupa cada empresa/cliente (por posiciones).', periodo: 'Foto del stock actual.', fuente: 'El stock actual del WMS.', calculo: 'Posiciones de cada empresa sobre el total.', nota: 'Clave en un depósito multicliente: quién ocupa más espacio.' },
   tortaEstado: { icono: '🩺', titulo: 'Salud del inventario (por estado)', mide: 'La proporción de stock disponible vs. inmovilizado (bloqueado / rechazado / obsoleto).', periodo: 'Foto del stock actual.', fuente: 'El estado de cada packing.', calculo: '% de posiciones por estado.', nota: 'Cuanto más rojo/naranja, más plata parada.' },

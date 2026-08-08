@@ -41,7 +41,7 @@
       </div>
     </div>
 
-    <p class="home-foot">Fuentes en vivo: RRHH (sqlRRHHlog) · Stock/Logística (LOGIST_UNIVERSAL) · Gestión (sqlLOGIST). Solo lectura.</p>
+    <p class="home-foot">Fuentes en vivo: RRHH · Stock/Logística · Gestión. Solo lectura.</p>
   </div>
 </template>
 
