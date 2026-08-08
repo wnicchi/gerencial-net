@@ -81,7 +81,7 @@ class ComparativaVentasController extends Controller
         foreach ($ventas as $v) {
             $tfa = (string) $v->VEN_TFA;
             $t2  = substr($tfa, 0, 2);
-            $base = $this->valorVenta($v, $inclIva);   // en pesos (gravado+exento o total)
+            $base = self::valorVenta($v, $inclIva);   // en pesos (gravado+exento o total)
 
             if ($moneda === 'D') {
                 $cot = (float) $v->VEN_COT;
@@ -146,7 +146,7 @@ class ComparativaVentasController extends Controller
      * Devuelve el importe POSITIVO (gravado+exento, o total con IVA); el signo de
      * las NC lo aplica el que acumula. Réplica 1:1 del SCAN de veRVENTAS del Fox.
      */
-    private function valorVenta($v, bool $inclIva): float
+    public static function valorVenta($v, bool $inclIva): float
     {
         $tfa = (string) $v->VEN_TFA;
         $t2  = substr($tfa, 0, 2);

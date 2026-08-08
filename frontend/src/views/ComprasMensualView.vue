@@ -29,9 +29,11 @@
       <table class="cm-tabla">
         <thead>
           <tr>
-            <th class="rub">Rubro</th><th class="det">Descripción</th>
-            <th v-for="(m, i) in meses" :key="i" class="num">{{ m }}</th>
-            <th class="num tot">Total Anual</th><th class="num por">Porcentaje</th>
+            <th class="rub ord" @click="ordenarPor('codigo')">Rubro<span class="cm-fl">{{ ind('codigo') }}</span></th>
+            <th class="det ord" @click="ordenarPor('nombre')">Descripción<span class="cm-fl">{{ ind('nombre') }}</span></th>
+            <th v-for="(m, i) in meses" :key="i" class="num ord" @click="ordenarPor('mes:' + i)">{{ m }}<span class="cm-fl">{{ ind('mes:' + i) }}</span></th>
+            <th class="num tot ord" @click="ordenarPor('total')">Total Anual<span class="cm-fl">{{ ind('total') }}</span></th>
+            <th class="num por ord" @click="ordenarPor('porcentaje')">Porcentaje<span class="cm-fl">{{ ind('porcentaje') }}</span></th>
           </tr>
         </thead>
         <tbody>
@@ -74,8 +76,33 @@ const mes = ref(hoy.getMonth() + 1)
 const anio = ref(hoy.getFullYear())
 const meses = ref<string[]>([])
 const filas = ref<Fila[]>([])
-// Grilla ordenada alfabéticamente por Descripción (nombre del rubro).
-const filasOrden = computed(() => [...filas.value].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')))
+
+// Orden de la grilla por clic en la cabecera (asc/desc con toggle).
+// Por defecto: alfabético por Descripción.
+const sortKey = ref('nombre')
+const sortDir = ref(1) // 1 = ascendente, -1 = descendente
+function ordenarPor (k: string) {
+  if (sortKey.value === k) sortDir.value = -sortDir.value
+  else { sortKey.value = k; sortDir.value = 1 }
+}
+function ind (k: string) { return sortKey.value === k ? (sortDir.value === 1 ? ' ▲' : ' ▼') : '' }
+function claveVal (f: Fila, k: string): number | string {
+  if (k === 'codigo') return f.codigo
+  if (k === 'nombre') return f.nombre
+  if (k === 'total') return f.total
+  if (k === 'porcentaje') return f.porcentaje
+  if (k.startsWith('mes:')) return f.montos[+k.slice(4)] ?? 0
+  return f.nombre
+}
+const filasOrden = computed(() => {
+  const k = sortKey.value, d = sortDir.value
+  return [...filas.value].sort((a, b) => {
+    const va = claveVal(a, k), vb = claveVal(b, k)
+    return typeof va === 'string'
+      ? d * va.localeCompare(vb as string, 'es')
+      : d * ((va as number) - (vb as number))
+  })
+})
 const total = ref<{ montos: number[]; total: number; porcentaje: number }>({ montos: [], total: 0, porcentaje: 0 })
 const cargando = ref(false)
 const msg = ref('')
@@ -124,6 +151,9 @@ cargar()
 .cm-tabla { width: 100%; border-collapse: collapse; font-size: 11.5px; white-space: nowrap; }
 .cm-tabla th { position: sticky; top: 0; background: #cfe8cf; color: #14532d; padding: 5px 8px; text-align: right; font-weight: 700; border-bottom: 1px solid #a7d3a7; }
 .cm-tabla th.rub, .cm-tabla th.det { text-align: left; }
+.cm-tabla th.ord { cursor: pointer; user-select: none; }
+.cm-tabla th.ord:hover { background: #bfe0bf; }
+.cm-fl { font-size: 10px; }
 .cm-tabla td { padding: 3px 8px; border-bottom: 1px solid #e2e8f0; color: #14532d; }
 .cm-tabla tr.alt td { background: #eef7ee; }
 .cm-tabla td.rub { text-align: center; font-weight: 700; }
